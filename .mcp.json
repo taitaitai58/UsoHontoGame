@@ -10,17 +10,12 @@
     "context7": {
       "type": "stdio",
       "command": "npx",
-      "args": [
-        "--yes",
-        "@upstash/context7-mcp"
-      ],
+      "args": ["--yes", "@upstash/context7-mcp"],
       "env": {}
     },
     "mfui-developer-mcp": {
       "command": "node",
-      "args": [
-        "${MFUI_MCP_PATH}/apps/mcp-server/build/index.js"
-      ]
+      "args": ["${MFUI_MCP_PATH}/apps/mcp-server/build/index.js"]
     }
   }
 }
