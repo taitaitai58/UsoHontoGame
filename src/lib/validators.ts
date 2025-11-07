@@ -72,6 +72,64 @@ export function validateEpisodeSet(episodes: { text: string; isLie: boolean }[])
 }
 
 /**
+ * Validate vote episode number
+ */
+export function validateVoteEpisodeNumber(episodeNumber: number): {
+  valid: boolean;
+  error?: string;
+} {
+  if (!Number.isInteger(episodeNumber)) {
+    return { valid: false, error: 'Episode number must be an integer' };
+  }
+  if (episodeNumber < 1 || episodeNumber > 3) {
+    return { valid: false, error: 'Episode number must be 1, 2, or 3' };
+  }
+  return { valid: true };
+}
+
+/**
+ * Validate vote submission data
+ */
+export function validateVoteSubmission(data: {
+  sessionId: string;
+  teamId: string;
+  turnId: string;
+  selectedEpisodeNumber: number;
+  presentingTeamId?: string;
+}): {
+  valid: boolean;
+  error?: string;
+} {
+  // Validate session ID
+  if (!data.sessionId || typeof data.sessionId !== 'string') {
+    return { valid: false, error: 'Session ID is required' };
+  }
+
+  // Validate team ID
+  if (!data.teamId || typeof data.teamId !== 'string') {
+    return { valid: false, error: 'Team ID is required' };
+  }
+
+  // Validate turn ID
+  if (!data.turnId || typeof data.turnId !== 'string') {
+    return { valid: false, error: 'Turn ID is required' };
+  }
+
+  // Validate episode number
+  const episodeResult = validateVoteEpisodeNumber(data.selectedEpisodeNumber);
+  if (!episodeResult.valid) {
+    return episodeResult;
+  }
+
+  // Prevent voting on own team's presentation
+  if (data.presentingTeamId && data.teamId === data.presentingTeamId) {
+    return { valid: false, error: 'Cannot vote on your own team\'s episodes' };
+  }
+
+  return { valid: true };
+}
+
+/**
  * Sanitize input to prevent XSS
  */
 export function sanitizeInput(input: string): string {

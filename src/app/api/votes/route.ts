@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { validateVoteSubmission } from '@/lib/validators';
 import {
   BusinessRuleError,
   NotFoundError,
@@ -15,6 +16,19 @@ import { InMemoryVoteRepository } from '@/server/infrastructure/repositories/InM
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+
+    // Validate vote submission data
+    const validation = validateVoteSubmission({
+      sessionId: body.sessionId,
+      teamId: body.teamId,
+      turnId: body.turnId,
+      selectedEpisodeNumber: body.selectedEpisodeNumber,
+      presentingTeamId: body.presentingTeamId,
+    });
+
+    if (!validation.valid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
 
     const voteRepository = InMemoryVoteRepository.getInstance();
     const sessionRepository = InMemoryGameSessionRepository.getInstance();
