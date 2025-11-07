@@ -1,9 +1,8 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { useJoinPage } from './hooks/useJoinPage';
 
 export interface JoinPageProps {
   sessionId?: string;
@@ -14,77 +13,18 @@ export interface JoinPageProps {
  * Page for creating a new session or joining an existing one
  */
 export function JoinPage({ sessionId }: JoinPageProps) {
-  const router = useRouter();
-  const [nickname, setNickname] = useState('');
-  const [joinSessionId, setJoinSessionId] = useState(sessionId || '');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [mode, setMode] = useState<'join' | 'create'>(sessionId ? 'join' : 'create');
-
-  const handleCreateSession = async () => {
-    if (!nickname.trim()) {
-      setError('ニックネームを入力してください');
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch('/api/sessions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hostNickname: nickname }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'セッションの作成に失敗しました');
-      }
-
-      const data = await response.json();
-      router.push(`/game/${data.sessionId}?participantId=${data.hostId}`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'エラーが発生しました');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleJoinSession = async () => {
-    if (!nickname.trim()) {
-      setError('ニックネームを入力してください');
-      return;
-    }
-
-    if (!joinSessionId.trim()) {
-      setError('セッションIDを入力してください');
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch(`/api/sessions/${joinSessionId}/join`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nickname }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'セッションへの参加に失敗しました');
-      }
-
-      const data = await response.json();
-      router.push(`/game/${joinSessionId}?participantId=${data.participantId}`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'エラーが発生しました');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const {
+    nickname,
+    setNickname,
+    joinSessionId,
+    setJoinSessionId,
+    isLoading,
+    error,
+    mode,
+    setMode,
+    handleCreateSession,
+    handleJoinSession,
+  } = useJoinPage({ sessionId });
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50 p-4">

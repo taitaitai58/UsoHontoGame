@@ -1,11 +1,8 @@
 'use client';
 
-export interface TeamScore {
-  teamId: string;
-  teamName: string;
-  score: number;
-  memberIds: string[];
-}
+import { useScoreboard, type TeamScore } from './hooks/useScoreboard';
+
+export type { TeamScore };
 
 export interface ScoreBoardProps {
   teams: TeamScore[];
@@ -17,8 +14,10 @@ export interface ScoreBoardProps {
  * Displays current team scores
  */
 export function ScoreBoard({ teams, currentTeamId }: ScoreBoardProps) {
-  // Sort teams by score descending
-  const sortedTeams = [...teams].sort((a, b) => b.score - a.score);
+  const { sortedTeams, isTeamLeading, isCurrentTeam, hasScores } = useScoreboard({
+    teams,
+    currentTeamId,
+  });
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
@@ -26,14 +25,14 @@ export function ScoreBoard({ teams, currentTeamId }: ScoreBoardProps) {
 
       <div className="space-y-3">
         {sortedTeams.map((team, index) => {
-          const isCurrentTeam = team.teamId === currentTeamId;
-          const isLeading = index === 0 && team.score > 0;
+          const isCurrent = isCurrentTeam(team.teamId);
+          const isLeading = isTeamLeading(team.teamId);
 
           return (
             <div
               key={team.teamId}
               className={`p-4 rounded-lg border-2 transition-all ${
-                isCurrentTeam
+                isCurrent
                   ? 'border-blue-500 bg-blue-50'
                   : isLeading
                     ? 'border-yellow-500 bg-yellow-50'
@@ -53,7 +52,7 @@ export function ScoreBoard({ teams, currentTeamId }: ScoreBoardProps) {
                           👑
                         </span>
                       )}
-                      {isCurrentTeam && (
+                      {isCurrent && (
                         <span className="text-sm text-blue-600 font-normal">(あなたのチーム)</span>
                       )}
                     </div>
@@ -67,7 +66,7 @@ export function ScoreBoard({ teams, currentTeamId }: ScoreBoardProps) {
         })}
       </div>
 
-      {sortedTeams.length === 0 && (
+      {!hasScores && (
         <div className="text-center text-gray-500 py-8">まだスコアがありません</div>
       )}
     </div>

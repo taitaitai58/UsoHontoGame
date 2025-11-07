@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
+import { useVoting } from './hooks/useVoting';
 
 export interface VotingInterfaceProps {
   episodes: Array<{ episodeNumber: number; text: string }>;
@@ -20,13 +20,9 @@ export function VotingInterface({
   isLoading = false,
   hasVoted = false,
 }: VotingInterfaceProps) {
-  const [selectedEpisode, setSelectedEpisode] = useState<number | null>(null);
-
-  const handleSubmit = () => {
-    if (selectedEpisode !== null) {
-      onVoteSubmit(selectedEpisode);
-    }
-  };
+  const { selectedEpisode, selectEpisode, handleSubmit, canSubmit } = useVoting({
+    onVoteSubmit,
+  });
 
   if (hasVoted) {
     return (
@@ -49,7 +45,7 @@ export function VotingInterface({
           <button
             key={episode.episodeNumber}
             type="button"
-            onClick={() => setSelectedEpisode(episode.episodeNumber)}
+            onClick={() => selectEpisode(episode.episodeNumber)}
             disabled={isLoading}
             className={`w-full p-4 text-left border-2 rounded-lg transition-all ${
               selectedEpisode === episode.episodeNumber
@@ -88,7 +84,7 @@ export function VotingInterface({
 
       <Button
         onClick={handleSubmit}
-        disabled={selectedEpisode === null || isLoading}
+        disabled={!canSubmit || isLoading}
         fullWidth
         variant="primary"
       >
