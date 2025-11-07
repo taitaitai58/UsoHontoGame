@@ -30,9 +30,9 @@ export function Button({
   };
 
   const sizeStyles = {
-    sm: 'h-9 px-3 text-sm',
-    md: 'h-11 px-6 text-base',
-    lg: 'h-14 px-8 text-lg',
+    sm: 'h-10 px-3 text-sm', // 40px - mobile-friendly minimum
+    md: 'h-11 px-6 text-base', // 44px - WCAG touch target guideline
+    lg: 'h-14 px-8 text-lg', // 56px - extra comfortable
   };
 
   const widthStyle = fullWidth ? 'w-full' : '';
