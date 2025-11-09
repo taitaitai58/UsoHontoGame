@@ -194,13 +194,13 @@
 - [X] T108 [US3] Implement GET /api/sessions/[id]/events route in src/app/api/sessions/[id]/events/route.ts
 - [X] T109 [P] [US3] Create useSSEConnection hook for SSE connection in src/hooks/useSSEConnection.ts
 - [X] T110 [P] [US3] Create useRealTimeSync hook in src/hooks/useRealTimeSync.ts
-- [ ] T111 [US3] Integrate SSE broadcasts into RevealAnswerUseCase (blocked - use case not yet implemented)
-- [ ] T112 [US3] Integrate SSE broadcasts into SubmitVoteUseCase (blocked - use case not yet implemented)
-- [ ] T113 [US3] Integrate SSE broadcasts into StartTurnUseCase (blocked - use case not yet implemented)
+- [ ] T111 [US3] Integrate SSE broadcasts into RevealAnswerUseCase
+- [ ] T112 [US3] Integrate SSE broadcasts into SubmitVoteUseCase 
+- [ ] T113 [US3] Integrate SSE broadcasts into StartTurnUseCase
 - [X] T114 [US3] Add reconnection logic with exponential backoff in useSSEConnection
 - [X] T115 [US3] Add heartbeat mechanism (30s interval) to maintain SSE connections
-- [ ] T116 [US3] Update ScoreBoard to listen for score-change events (blocked - component not yet implemented)
-- [ ] T117 [US3] Update GamePage to listen for game-state-update events (blocked - component not yet implemented)
+- [ ] T116 [US3] Update ScoreBoard to listen for score-change events
+- [ ] T117 [US3] Update GamePage to listen for game-state-update events
 - [X] T118 [US3] Add connection status indicator component in src/components/ui/ConnectionStatus
 - [X] T119 [US3] Handle network interruption and state resync on reconnection
 
@@ -248,14 +248,10 @@
 - [X] T137 [P] Add toast notifications for user actions (vote submitted, episode saved, etc.) - ToastContext and useToast created
 - [X] T138 [P] Add form validation error messages - JoinPage and TeamManager forms have inline validation with error display
 - [X] T139 [P] Add session cleanup service (delete sessions older than 3 hours) - SessionCleanupService created
-- [ ] T140 [P] Add API rate limiting middleware
 - [X] T141 [P] Add comprehensive error logging - LoggerService with structured logging, levels, and context
 - [X] T142 [P] Optimize bundle size (code splitting, lazy loading) - Dynamic imports for ResultsPage, Next.js config optimizations
-- [ ] T143 [P] Add performance monitoring for <3s score calculation requirement
-- [ ] T144 [P] Add timer sync latency monitoring (<500ms requirement)
 - [X] T145 [P] Add accessibility attributes (ARIA labels, keyboard navigation) - integrated into Timer component
 - [X] T146 [P] Add focus management for modals - full focus trap implemented
-- [ ] T147 [P] Test with screen readers
 - [X] T148 [P] Add E2E test for complete game flow with Playwright - 4 E2E tests created covering game flow, validation, and loading states
 - [X] T149 [P] Review and verify all TDD test coverage (aim for 80%+) - 27 test files: 10 unit, 11 integration, 3 component, 2 E2E, 1 complete journey
 - [X] T150 [P] Final constitution compliance check across all code - All 5 architecture principles verified and passing
