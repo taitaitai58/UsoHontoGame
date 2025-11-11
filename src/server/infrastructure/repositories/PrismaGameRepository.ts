@@ -63,6 +63,27 @@ export class PrismaGameRepository implements IGameRepository {
 	}
 
 	/**
+	 * Find games by creator ID
+	 * @param creatorId Creator/moderator session ID
+	 */
+	async findByCreatorId(creatorId: string): Promise<Game[]> {
+		const games = await this.prisma.game.findMany({
+			where: { creatorId },
+			orderBy: { createdAt: "desc" },
+		});
+
+		return games.map((game: {
+			id: string;
+			name: string;
+			status: string;
+			maxPlayers: number;
+			currentPlayers: number;
+			createdAt: Date;
+			updatedAt: Date;
+		}) => this.toDomain(game));
+	}
+
+	/**
 	 * Find game by ID
 	 * @param id Game ID
 	 */
@@ -202,6 +223,7 @@ export class PrismaGameRepository implements IGameRepository {
 		currentPlayers: number;
 		createdAt: Date;
 		updatedAt: Date;
+		creatorId?: string;
 	}): Game {
 		return new Game(
 			new GameId(prismaGame.id),
@@ -211,6 +233,7 @@ export class PrismaGameRepository implements IGameRepository {
 			prismaGame.currentPlayers,
 			prismaGame.createdAt,
 			prismaGame.updatedAt,
+			prismaGame.creatorId || "",
 		);
 	}
 }

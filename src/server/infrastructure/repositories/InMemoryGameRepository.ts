@@ -53,6 +53,14 @@ export class InMemoryGameRepository implements IGameRepository {
   }
 
   /**
+   * Finds games by creator ID
+   * @param creatorId Creator/moderator session ID
+   */
+  async findByCreatorId(creatorId: string): Promise<Game[]> {
+    return Array.from(this.games.values()).filter((game) => game.creatorId === creatorId);
+  }
+
+  /**
    * Finds a game by ID
    * @param id The game ID
    */

@@ -26,6 +26,13 @@ export interface IGameRepository {
   findByStatus(status: GameStatus): Promise<Game[]>;
 
   /**
+   * Find games by creator ID
+   * @param creatorId Creator/moderator session ID
+   * @returns Games created by the specified user
+   */
+  findByCreatorId(creatorId: string): Promise<Game[]>;
+
+  /**
    * Find single game by ID
    * @param id Game ID to search for
    * @returns Game entity or null if not found

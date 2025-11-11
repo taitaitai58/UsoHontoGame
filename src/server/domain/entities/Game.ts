@@ -38,6 +38,7 @@ export class Game {
   private _currentPlayers: number;
   private _createdAt: Date;
   private _updatedAt: Date;
+  private _creatorId: string;
 
   /**
    * Creates a new Game
@@ -48,6 +49,7 @@ export class Game {
    * @param currentPlayers Current number of registered players
    * @param createdAt When the game was created
    * @param updatedAt When the game was last updated
+   * @param creatorId Session ID of the moderator who created the game
    */
   constructor(
     id: GameId,
@@ -56,7 +58,8 @@ export class Game {
     maxPlayers: number,
     currentPlayers: number,
     createdAt: Date,
-    updatedAt: Date
+    updatedAt: Date,
+    creatorId: string = ""
   ) {
     this._id = id;
     this._name = name;
@@ -65,6 +68,7 @@ export class Game {
     this._currentPlayers = currentPlayers;
     this._createdAt = createdAt;
     this._updatedAt = updatedAt;
+    this._creatorId = creatorId;
     this.validate();
   }
 
@@ -115,6 +119,13 @@ export class Game {
    */
   get updatedAt(): Date {
     return this._updatedAt;
+  }
+
+  /**
+   * Gets the creator/moderator session ID
+   */
+  get creatorId(): string {
+    return this._creatorId;
   }
 
   /**

@@ -218,9 +218,9 @@ This document provides a complete, dependency-ordered task list for implementing
 
 ### Application Layer
 
-- [ ] T067 [US4] Implement GetGamesByCreator use case in `src/server/application/use-cases/games/GetGamesByCreator.ts`
-- [ ] T068 [US4] Implement GetGameDetail use case in `src/server/application/use-cases/games/GetGameDetail.ts`
-- [ ] T069 [P] [US4] Write unit tests for GetGamesByCreator in `tests/unit/use-cases/GetGamesByCreator.test.ts`
+- [X] T067 [US4] Implement GetGamesByCreator use case in `src/server/application/use-cases/games/GetGamesByCreator.ts`
+- [X] T068 [US4] Implement GetGameDetail use case in `src/server/application/use-cases/games/GetGameDetail.ts`
+- [X] T069 [P] [US4] Write unit tests for GetGamesByCreator in `tests/unit/use-cases/GetGamesByCreator.test.ts`
 
 ### Presentation Layer
 
