@@ -1,383 +1,485 @@
-# Implementation Tasks: Game Preparation for Moderators
+# Tasks: Game Preparation for Moderators
 
-**Feature**: 002-game-preparation
-**Branch**: `002-game-preparation`
-**Generated**: 2025-11-10
-**Last Updated**: 2025-11-10 (refined based on cross-artifact analysis)
-**Total Tasks**: 89
+**Feature Branch**: `002-game-preparation`
+**Created**: 2025-11-11
+**Status**: Ready for Implementation
 
 ## Overview
 
-This document provides a complete, dependency-ordered task list for implementing the game preparation feature. Tasks are organized by user story (US1-US6) to enable independent implementation and testing.
-
-**Tech Stack**: TypeScript 5, Next.js 16, React 19, Prisma 6, Zod 3, SQLite, Vitest, Playwright
-
-**Analytics-Driven Improvements**: This task list has been refined based on cross-artifact analysis to address:
-- Episode text validation (1-1000 chars) emphasized as CRITICAL requirement
-- "Complete presenter" definition clarified (exactly 3 episodes AND exactly 1 lie)
-- Presenter nickname lookup error handling explicitly included
-- Test coverage enhanced for edge cases and error scenarios
-
-## Implementation Strategy
-
-**MVP Scope** (Recommended First Milestone):
-- ✅ User Story 1 (P1): Create New Game
-- Delivers immediate value: Moderators can create and persist games
-- Independent test: Create game → verify in database → verify in game list
-
-**Incremental Delivery**:
-1. **Sprint 1** (MVP): US1 - Game creation foundation
-2. **Sprint 2**: US2 + US3 - Content creation (presenters/episodes) + status management
-3. **Sprint 3**: US4 + US5 + US6 - Game management (list, edit, delete)
-
-## Task Legend
-
-- `[P]` = Parallelizable (can run simultaneously with other [P] tasks in same phase)
-- `[US#]` = User Story number (US1-US6)
-- Task IDs are in recommended execution order (T001-T089)
-
----
-
-## Phase 1: Setup & Infrastructure
-
-**Goal**: Establish database, validation layer, and foundational architecture
-
-### Setup Tasks
-
-- [X] T001 Install Prisma and Zod dependencies: `npm install prisma @prisma/client zod && npm install -D prisma`
-- [X] T002 Initialize Prisma with SQLite: `npx prisma init --datasource-provider sqlite`
-- [X] T003 Configure database URL in `.env`: `DATABASE_URL="file:./dev.db"`
-- [X] T004 Create Prisma schema in `prisma/schema.prisma` with Game, Presenter, Episode models
-- [X] T005 Run initial migration: `npx prisma migrate dev --name init`
-- [X] T006 Generate Prisma Client: `npx prisma generate`
-
-### Zod Validation Schemas
-
-- [X] T007 [P] Create directory structure: `mkdir -p src/server/domain/schemas`
-- [X] T008 [P] Create GameId and GameStatus Zod schemas in `src/server/domain/schemas/gameSchemas.ts`
-- [X] T009 [P] Create CreateGameSchema with playerLimit validation (1-100) in `src/server/domain/schemas/gameSchemas.ts`
-- [X] T010 [P] Create AddPresenterSchema with nickname validation in `src/server/domain/schemas/gameSchemas.ts`
-- [X] T011 [P] Create AddEpisodeSchema with text validation (1-1000 chars, CRITICAL requirement) and isLie boolean in `src/server/domain/schemas/gameSchemas.ts`
-- [X] T012 [P] Create CompletePresenterSchema for "complete presenter" validation (exactly 3 episodes AND exactly 1 lie) in `src/server/domain/schemas/validators.ts`
-- [X] T013 [P] Write unit tests for all Zod schemas (including edge cases: 0 chars, 1001 chars, multiple lies) in `tests/unit/schemas/gameSchemas.test.ts`
-
----
-
-## Phase 2: Foundational Layer (Domain + Infrastructure)
-
-**Goal**: Build reusable domain entities and repository infrastructure
-
-### Domain Errors
-
-- [X] T014 [P] Create ValidationError class in `src/server/domain/errors/ValidationError.ts`
-- [X] T015 [P] Create InvalidStatusTransitionError class in `src/server/domain/errors/InvalidStatusTransitionError.ts`
-
-### Value Objects
-
-- [X] T016 [P] Create GameId value object with UUID validation in `src/server/domain/value-objects/GameId.ts`
-- [X] T017 [P] Create GameStatus value object with enum validation in `src/server/domain/value-objects/GameStatus.ts`
-- [X] T018 [P] Write unit tests for GameId in `tests/unit/domain/GameId.test.ts`
-- [X] T019 [P] Write unit tests for GameStatus in `tests/unit/domain/GameStatus.test.ts`
-
-### Domain Entities
-
-- [X] T020 Create Episode entity with validation in `src/server/domain/entities/Episode.ts`
-- [X] T021 Create Presenter entity with hasCompleteEpisodes() method in `src/server/domain/entities/Presenter.ts`
-- [X] T022 Create Game entity with status transitions (startAccepting, close) in `src/server/domain/entities/Game.ts`
-- [X] T023 [P] Write unit tests for Episode entity in `tests/unit/domain/Episode.test.ts`
-- [X] T024 [P] Write unit tests for Presenter entity in `tests/unit/domain/Presenter.test.ts`
-- [X] T025 [P] Write unit tests for Game entity (30 tests covering all validations) in `tests/unit/domain/Game.test.ts`
-
-### Repository Layer
-
-- [X] T026 Create IGameRepository interface in `src/server/domain/repositories/IGameRepository.ts`
-- [X] T027 Create PrismaGameRepository implementation in `src/server/infrastructure/repositories/PrismaGameRepository.ts`
-- [X] T028 Update InMemoryGameRepository to match IGameRepository interface in `src/server/infrastructure/repositories/InMemoryGameRepository.ts`
-- [X] T029 Create repository factory with DI in `src/server/infrastructure/repositories/index.ts`
-- [X] T030 [P] Write integration tests for PrismaGameRepository in `tests/integration/repositories/PrismaGameRepository.test.ts`
-- [X] T031 [P] Write integration tests for InMemoryGameRepository in `tests/integration/repositories/InMemoryGameRepository.test.ts`
-
----
-
-## Phase 3: User Story 1 - Create New Game (P1 - MVP)
-
-**Goal**: Moderators can create and persist games with player limits
-
-**Independent Test**: Create game with player limit → verify stored in database → verify appears in game list
-
-**Value Delivered**: Foundation for all other features - games can exist and be persisted
-
-### Application Layer
-
-- [X] T032 [US1] Create GameDto type in `src/server/application/dto/GameDto.ts`
-- [X] T033 [US1] Implement CreateGame use case in `src/server/application/use-cases/games/CreateGame.ts`
-- [X] T034 [US1] Write unit tests for CreateGame use case in `tests/unit/use-cases/CreateGame.test.ts`
-
-### Presentation Layer
-
-- [X] T035 [US1] Create createGameAction Server Action with Zod validation in `src/app/actions/game.ts`
-- [X] T036 [US1] Create useGameForm custom hook with Zod validation in `src/hooks/useGameForm.ts`
-- [X] T037 [US1] Create GameForm component in `src/components/domain/game/GameForm.tsx`
-- [X] T038 [US1] Create game creation page in `src/app/games/create/page.tsx`
-- [X] T039 [US1] Write E2E test for game creation flow in `tests/e2e/game-creation.spec.ts`
-
-**US1 Completion Criteria**:
-- ✅ Game created with valid player limit (1-100)
-- ✅ Game stored in SQLite database with UUID
-- ✅ Validation errors shown for invalid input
-- ✅ Redirect to game list after successful creation
-
----
-
-## Phase 4: User Story 2 - Register Presenters and Episodes (P2)
-
-**Goal**: Add presenters to games and allow episode registration with lie markers
-
-**Independent Test**: Add presenter to game → register 3 episodes → mark one as lie → verify confidentiality
-
-**Value Delivered**: Games become playable with content
-
-**Dependencies**: Requires US1 (games must exist)
-
-### Application Layer
-
-- [X] T040 [US2] Create PresenterWithLieDto type in `src/server/application/dto/PresenterWithLieDto.ts`
-- [X] T041 [US2] Create EpisodeWithLieDto type in `src/server/application/dto/EpisodeWithLieDto.ts`
-- [X] T042 [US2] Create EpisodeDto (public, no isLie) type in `src/server/application/dto/EpisodeDto.ts`
-- [X] T043 [US2] Implement AddPresenter use case with nickname lookup validation (throw NotFoundError if nickname doesn't exist in session system) in `src/server/application/use-cases/games/AddPresenter.ts`
-- [X] T044 [US2] Implement RemovePresenter use case in `src/server/application/use-cases/games/RemovePresenter.ts`
-- [X] T045 [US2] Implement AddEpisode use case with lie marker validation in `src/server/application/use-cases/games/AddEpisode.ts`
-- [X] T046 [US2] Implement GetPresenterEpisodes use case (with access control) in `src/server/application/use-cases/games/GetPresenterEpisodes.ts`
-- [X] T047 [P] [US2] Write unit tests for AddPresenter (including NotFoundError for invalid nickname) in `tests/unit/use-cases/AddPresenter.test.ts`
-- [X] T048 [P] [US2] Write unit tests for AddEpisode in `tests/unit/use-cases/AddEpisode.test.ts`
-
-### Presentation Layer
-
-- [X] T049 [US2] Create presenter action Server Actions (addPresenter, removePresenter with Zod validation and NotFoundError handling) in `src/app/actions/presenter.ts`
-- [X] T050 [US2] Create usePresenterForm hook with Zod in `src/hooks/usePresenterForm.ts`
-- [X] T051 [US2] Create useEpisodeForm hook with Zod in `src/hooks/useEpisodeForm.ts`
-- [X] T052 [US2] Create PresenterList component in `src/components/domain/game/PresenterList.tsx`
-- [X] T053 [US2] Create PresenterForm component in `src/components/domain/game/PresenterForm.tsx`
-- [X] T054 [US2] Create EpisodeList component with lie marker (confidential) in `src/components/domain/game/EpisodeList.tsx`
-- [X] T055 [US2] Create EpisodeForm component in `src/components/domain/game/EpisodeForm.tsx`
-- [X] T056 [US2] Create presenter management page in `src/app/games/[id]/presenters/page.tsx`
-- [X] T057 [US2] Write E2E test for presenter registration flow in `tests/e2e/presenter-management.spec.ts`
-
-**US2 Completion Criteria**:
-- ✅ Presenter added to game with nickname
-- ✅ 3 episodes registered per presenter
-- ✅ Exactly 1 episode marked as lie
-- ✅ Lie marker visible only to presenter/moderator
-- ✅ Maximum 10 presenters enforced
-
----
-
-## Phase 5: User Story 3 - Manage Game Status (P2)
-
-**Goal**: Control game flow through status transitions (準備中 → 出題中 → 締切)
-
-**Independent Test**: Transition game through all statuses → verify validation → verify TOP page visibility
-
-**Value Delivered**: Games can progress from preparation to live to closed
-
-**Dependencies**: Requires US1 (games) and US2 (presenters/episodes for validation)
-
-### Application Layer
-
-- [X] T058 [US3] Implement StartAcceptingResponses use case with validation in `src/server/application/use-cases/games/StartAcceptingResponses.ts`
-- [X] T059 [US3] Implement CloseGame use case in `src/server/application/use-cases/games/CloseGame.ts`
-- [X] T060 [P] [US3] Write unit tests for StartAcceptingResponses in `tests/unit/use-cases/StartAcceptingResponses.test.ts`
-- [X] T061 [P] [US3] Write unit tests for CloseGame in `tests/unit/use-cases/CloseGame.test.ts`
-
-### Presentation Layer
-
-- [X] T062 [US3] Create startAcceptingAction Server Action in `src/app/actions/game.ts`
-- [X] T063 [US3] Create closeGameAction Server Action in `src/app/actions/game.ts`
-- [X] T064 [US3] Add status transition buttons to GameCard component in `src/components/domain/game/GameCard.tsx`
-- [X] T065 [US3] Create Badge component for status display in `src/components/ui/Badge.tsx`
-- [X] T066 [US3] Write E2E test for status transitions in `tests/e2e/status-transitions.spec.ts`
-
-**US3 Completion Criteria**:
-- ✅ Game transitions from 準備中 to 出題中 (with validation)
-- ✅ Game transitions from 出題中 to 締切
-- ✅ Cannot transition without valid presenters/episodes
-- ✅ Game visible on TOP page when 出題中
-- ✅ Game hidden from TOP page when 締切
-
----
-
-## Phase 6: User Story 4 - View and Manage Game List (P3)
-
-**Goal**: Display all moderator's games in organized list with actions
-
-**Independent Test**: Create multiple games → verify all appear in list → verify action buttons work
-
-**Value Delivered**: Efficient game management interface
-
-**Dependencies**: Requires US1 (games must exist to list)
-
-### Application Layer
-
-- [X] T067 [US4] Implement GetGamesByCreator use case in `src/server/application/use-cases/games/GetGamesByCreator.ts`
-- [X] T068 [US4] Implement GetGameDetail use case in `src/server/application/use-cases/games/GetGameDetail.ts`
-- [X] T069 [P] [US4] Write unit tests for GetGamesByCreator in `tests/unit/use-cases/GetGamesByCreator.test.ts`
-
-### Presentation Layer
-
-- [X] T070 [US4] Create getGamesAction Server Action in `src/app/actions/game.ts`
-- [X] T071 [US4] Create GameCard component with status badge in `src/components/domain/game/GameCard.tsx`
-- [X] T072 [US4] Create GameList component with empty state in `src/components/domain/game/GameList.tsx`
-- [X] T073 [US4] Create game list page in `src/app/games/page.tsx`
-- [X] T074 [US4] Create Card UI component in `src/components/ui/Card.tsx`
-- [X] T075 [US4] Write E2E test for game list display in `tests/e2e/game-list.spec.ts`
-
-**US4 Completion Criteria**:
-- ✅ All moderator's games displayed in list
-- ✅ Each game shows status, player limit, presenter count
-- ✅ Empty state shown when no games exist
-- ✅ Navigate to game creation from list
-- ✅ Navigate to game edit from list
-
----
-
-## Phase 7: User Story 5 - Edit Existing Game (P3)
-
-**Goal**: Modify game settings when in preparation status
-
-**Independent Test**: Edit game player limit → verify saved → edit presenter → verify cascade
-
-**Value Delivered**: Flexibility to correct mistakes before game goes live
-
-**Dependencies**: Requires US1 (games), US2 (presenters), US4 (game detail view)
-
-### Application Layer
-
-- [x] T076 [US5] Create GameDetailDto type in `src/server/application/dto/GameDetailDto.ts`
-- [x] T077 [US5] Implement UpdateGameSettings use case in `src/server/application/use-cases/games/UpdateGameSettings.ts`
-- [x] T078 [US5] Write unit tests for UpdateGameSettings in `tests/unit/use-cases/UpdateGameSettings.test.ts`
-
-### Presentation Layer
-
-- [x] T079 [US5] Create updateGameAction Server Action with Zod in `src/app/actions/game.ts`
-- [x] T080 [US5] Create game detail/edit page in `src/app/games/[id]/page.tsx`
-- [x] T081 [US5] Add edit mode to GameForm component in `src/components/domain/game/GameForm.tsx`
-- [x] T082 [US5] Write E2E test for game editing flow in `tests/e2e/game-edit.spec.ts`
-
-**US5 Completion Criteria**:
-- ✅ Player limit editable when status is 準備中
-- ✅ Presenters removable (cascade deletes episodes)
-- ✅ Editing blocked when status is 出題中 or 締切
-- ✅ Changes saved immediately
-- ✅ Validation errors shown for invalid edits
-
----
-
-## Phase 8: User Story 6 - Delete Game (P3)
-
-**Goal**: Remove games with confirmation for active/closed games
-
-**Independent Test**: Delete 準備中 game → verify removed → attempt delete 出題中 game → verify confirmation
-
-**Value Delivered**: Game list organization and cleanup
-
-**Dependencies**: Requires US1 (games), US4 (game list)
-
-### Application Layer
-
-- [x] T083 [US6] Implement DeleteGame use case with cascade in `src/server/application/use-cases/games/DeleteGame.ts`
-- [x] T084 [US6] Write unit tests for DeleteGame in `tests/unit/use-cases/DeleteGame.test.ts`
-
-### Presentation Layer
-
-- [x] T085 [US6] Create deleteGameAction Server Action with confirmation in `src/app/actions/game.ts`
-- [x] T086 [US6] Add delete button to GameCard with confirmation dialog in `src/components/domain/game/GameCard.tsx`
-- [x] T087 [US6] Write E2E test for game deletion in `tests/e2e/game-delete.spec.ts`
-
-**US6 Completion Criteria**:
-- ✅ Game deleted when status is 準備中
-- ✅ Confirmation shown for 出題中 or 締切 games
-- ✅ Cascade deletes presenters and episodes
-- ✅ Game removed from list immediately
-- ✅ Can cancel deletion
-
----
-
-## Phase 9: Polish & Cross-Cutting Concerns
-
-**Goal**: UI consistency, accessibility, and final integration
-
-### UI Components
-
-- [X] T088 [P] Create Button component with variants in `src/components/ui/Button.tsx`
-- [X] T089 [P] Create Input component with validation states in `src/components/ui/Input.tsx`
-
----
+This feature enables moderators to create and manage games with custom names, player limits, presenters (1-10), and episodes (3 per presenter with one marked as a lie). Games transition through three statuses: 準備中 → 出題中 → 締切. Implementation follows Clean Architecture with TDD, using SQLite/Prisma for persistence, React Server Components, and Server Actions for mutations.
+
+**Key Updates**:
+- Game name field (optional, max 100 chars) - FR-001a, FR-001b
+- Presenters and episodes can be added during game creation - FR-003a
+- Full CRUD operations with proper authorization
+- Status transitions with business rule validation
 
 ## Dependency Graph
 
 ```
-Phase 1 (Setup) → Phase 2 (Foundational) → Phase 3+ (User Stories)
+Phase 1: Setup → Phase 2: Foundational → Phase 3-8: User Stories (some parallel) → Phase 9: Polish
 
-User Story Dependencies:
-- US1 (Create Game) ........................... No dependencies [MVP]
-- US2 (Presenters/Episodes) ................... Requires US1
-- US3 (Status Management) ..................... Requires US1, US2
-- US4 (Game List) ............................. Requires US1
-- US5 (Edit Game) ............................. Requires US1, US2, US4
-- US6 (Delete Game) ........................... Requires US1, US4
+Phase 3 (US1 - P1): Create Game with Name & Presenters
+   ↓
+Phase 4 (US2 - P2): Register Presenters/Episodes (extends Phase 3)
+   ↓
+Phase 5 (US3 - P2): Manage Game Status (depends on Phase 4)
+   ↓
+Phase 6-8 (US4-6 - P3): List/Edit/Delete (depends on Phase 3-5)
+   ↓
+Phase 9: Integration & Polish
 ```
 
-## Parallel Execution Opportunities
+**Parallel Opportunities**:
+- Phase 6 (US4 - List) can start after Phase 3 completes
+- Phase 7 (US5 - Edit) and Phase 8 (US6 - Delete) can run in parallel after Phase 3-5
 
-### Phase 1 (Setup)
-- T007-T012: All Zod schema creation tasks can run in parallel
+---
 
-### Phase 2 (Foundational)
-- T014-T015: Domain errors can run in parallel
-- T016-T017: Value objects can run in parallel
-- T018-T019: Value object tests can run in parallel
-- T023-T025: Entity tests can run in parallel after entities created
-- T030-T031: Repository tests can run in parallel
+## Phase 1: Setup & Schema Migration
 
-### User Story Phases
-- Within each user story phase, test tasks marked [P] can run in parallel with other [P] tasks
-- Example US2: T047-T048 (use case tests) can run in parallel
+**Purpose**: Initialize project structure and update database schema for game name and presenter/episode entities.
 
-## Testing Strategy
+- [ ] T001 [P] Update Prisma schema to add `name` field to Game model at `/Users/ookura.keisuke/repos/UsoHontoGame/prisma/schema.prisma`
+- [ ] T002 [P] Add Presenter model to Prisma schema at `/Users/ookura.keisuke/repos/UsoHontoGame/prisma/schema.prisma`
+- [ ] T003 [P] Add Episode model to Prisma schema with cascade delete at `/Users/ookura.keisuke/repos/UsoHontoGame/prisma/schema.prisma`
+- [ ] T004 Create Prisma migration for game name, presenters, and episodes
+- [ ] T005 Run migration and verify schema changes in dev.db
+- [ ] T006 [P] Create TypeScript types for Presenter at `/Users/ookura.keisuke/repos/UsoHontoGame/src/types/presenter.ts`
+- [ ] T007 [P] Create TypeScript types for Episode at `/Users/ookura.keisuke/repos/UsoHontoGame/src/types/episode.ts`
+- [ ] T008 Update existing Game types to include name and presenters at `/Users/ookura.keisuke/repos/UsoHontoGame/src/types/game.ts`
 
-**Test-Driven Development** (per Constitution Principle IV):
-1. Write tests first for each component (marked as [P] tasks)
-2. Implement to make tests pass
-3. Refactor while keeping tests green
+---
 
-**Test Coverage**:
-- Unit tests: Domain entities, value objects, use cases, Zod schemas
-- Integration tests: Repositories (Prisma + InMemory)
-- E2E tests: Complete user flows for each user story
+## Phase 2: Foundational Domain Layer
 
-**Independent Test Criteria** (per user story):
-- Each user story has defined acceptance scenarios
-- Each user story delivers testable, incremental value
-- Tests can run independently without blocking other stories
+**Purpose**: Build core domain entities, value objects, repositories, and DTOs that all user stories depend on.
 
-## Implementation Notes
+### Value Objects (TDD)
 
-1. **Zod Validation Pattern**: All Server Actions validate input with Zod before calling use cases
-2. **Repository Pattern**: Use dependency injection to swap InMemory/Prisma repos
-3. **Lie Marker Security**: Never expose `isLie` field in public DTOs (FR-006)
-4. **Status Transitions**: Enforce business rules in Game entity methods
-5. **Custom Hooks**: Extract all form logic from components (Constitution Principle III)
-6. **Server Components First**: Default to Server Components, Client only for interactivity
-7. **Episode Text Validation**: 1-1000 character limit is a CRITICAL requirement, not an assumption - validate in Zod schema and test edge cases
-8. **Presenter Nickname Lookup**: Validate nickname exists in session system before adding presenter, throw NotFoundError for invalid nicknames
-9. **Complete Presenter Definition**: Exactly 3 episodes AND exactly 1 lie marker - validate before status transition to 出題中
-10. **Concurrent Edits**: Last-write-wins strategy (no optimistic locking in MVP) - document for future enhancement
+- [ ] T009 Write unit tests for GameName value object at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/unit/value-objects/GameName.test.ts`
+- [ ] T010 Implement GameName value object (optional, max 100 chars) at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/domain/value-objects/GameName.ts`
+- [ ] T011 [P] Write unit tests for PresenterId value object at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/unit/value-objects/PresenterId.test.ts`
+- [ ] T012 [P] Implement PresenterId value object at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/domain/value-objects/PresenterId.ts`
+- [ ] T013 [P] Write unit tests for EpisodeId value object at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/unit/value-objects/EpisodeId.test.ts`
+- [ ] T014 [P] Implement EpisodeId value object at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/domain/value-objects/EpisodeId.ts`
+- [ ] T015 [P] Write unit tests for EpisodeText value object at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/unit/value-objects/EpisodeText.test.ts`
+- [ ] T016 [P] Implement EpisodeText value object (max 1000 chars) at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/domain/value-objects/EpisodeText.ts`
 
-## Next Steps
+### Domain Entities (TDD)
 
-1. **Start with MVP**: Implement US1 (T001-T039) for first working version
-2. **Add Content**: Implement US2 and US3 (T040-T066) for playable games
-3. **Complete Management**: Implement US4-US6 (T067-T087) for full feature
-4. **Polish**: Implement Phase 9 (T088-T089) for UI consistency
+- [ ] T017 Write unit tests for Episode entity at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/unit/entities/Episode.test.ts`
+- [ ] T018 Implement Episode entity with isLie field at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/domain/entities/Episode.ts`
+- [ ] T019 Write unit tests for Presenter entity at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/unit/entities/Presenter.test.ts`
+- [ ] T020 Implement Presenter entity with episode management methods at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/domain/entities/Presenter.ts`
+- [ ] T021 Write unit tests for Game entity extensions (name, presenters) at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/unit/entities/Game.test.ts`
+- [ ] T022 Extend Game entity with name field and presenter management at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/domain/entities/Game.ts`
+- [ ] T023 Add status transition methods to Game entity (startAccepting, close) at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/domain/entities/Game.ts`
 
-**Total Tasks**: 89 (Setup: 13, Foundational: 18, US1: 8, US2: 18, US3: 9, US4: 9, US5: 7, US6: 5, Polish: 2)
+### Domain Errors
+
+- [ ] T024 [P] Create PresenterLimitError at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/domain/errors/PresenterLimitError.ts`
+- [ ] T025 [P] Create EpisodeLimitError at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/domain/errors/EpisodeLimitError.ts`
+- [ ] T026 [P] Create InvalidStatusTransitionError at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/domain/errors/InvalidStatusTransitionError.ts`
+
+### Zod Validation Schemas
+
+- [ ] T027 [P] Create Presenter validation schemas at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/domain/schemas/presenterSchemas.ts`
+- [ ] T028 [P] Create Episode validation schemas at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/domain/schemas/episodeSchemas.ts`
+- [ ] T029 Extend Game validation schemas with name and presenters at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/domain/schemas/gameSchemas.ts`
+
+### Repository Interfaces
+
+- [ ] T030 [P] Create PresenterRepository interface at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/domain/repositories/PresenterRepository.ts`
+- [ ] T031 [P] Create EpisodeRepository interface at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/domain/repositories/EpisodeRepository.ts`
+- [ ] T032 Extend GameRepository interface with presenter/episode methods at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/domain/repositories/GameRepository.ts`
+
+### Infrastructure - Repositories (TDD)
+
+- [ ] T033 Write integration tests for PrismaPresenterRepository at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/integration/repositories/PrismaPresenterRepository.test.ts`
+- [ ] T034 Implement PrismaPresenterRepository at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/infrastructure/repositories/PrismaPresenterRepository.ts`
+- [ ] T035 Write integration tests for PrismaEpisodeRepository at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/integration/repositories/PrismaEpisodeRepository.test.ts`
+- [ ] T036 Implement PrismaEpisodeRepository with cascade delete at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/infrastructure/repositories/PrismaEpisodeRepository.ts`
+- [ ] T037 Write integration tests for PrismaGameRepository extensions at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/integration/repositories/PrismaGameRepository.test.ts`
+- [ ] T038 Extend PrismaGameRepository with presenter/episode operations at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/infrastructure/repositories/PrismaGameRepository.ts`
+
+### DTOs
+
+- [ ] T039 [P] Create EpisodeDto (public, no isLie) at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/application/dto/responses/EpisodeResponse.ts`
+- [ ] T040 [P] Create EpisodeWithLieDto (private, with isLie) at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/application/dto/responses/EpisodeResponse.ts`
+- [ ] T041 [P] Create PresenterResponse DTO at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/application/dto/responses/PresenterResponse.ts`
+- [ ] T042 Extend GameResponse DTO with name and presenters at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/application/dto/responses/GameResponse.ts`
+
+---
+
+## Phase 3: User Story 1 (P1) - Create New Game
+
+**Priority**: P1 - Foundation for all other functionality
+**Acceptance Criteria**: Can create game with name, player limit, and optionally presenters/episodes during creation
+
+### Use Cases (TDD)
+
+- [ ] T043 [US1] Write unit tests for CreateGame use case with name field at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/unit/use-cases/CreateGame.test.ts`
+- [ ] T044 [US1] Extend CreateGame use case to accept name and presenters at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/application/use-cases/games/CreateGame.ts`
+- [ ] T045 [US1] Create CreateGameRequest DTO with name and presenters at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/application/dto/requests/CreateGameRequest.ts`
+
+### Server Actions (TDD)
+
+- [ ] T046 [US1] Write integration tests for createGameAction at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/integration/api/game-actions.test.ts`
+- [ ] T047 [US1] Implement createGameAction with name and presenter support at `/Users/ookura.keisuke/repos/UsoHontoGame/src/app/actions/game.ts`
+
+### Custom Hooks (TDD)
+
+- [ ] T048 [US1] Write unit tests for useGameForm hook at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/unit/hooks/useGameForm.test.ts`
+- [ ] T049 [US1] Implement useGameForm hook with name field at `/Users/ookura.keisuke/repos/UsoHontoGame/src/components/pages/GameCreatePage/hooks/useGameForm.ts`
+- [ ] T050 [US1] Write unit tests for usePresenterManager hook at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/unit/hooks/usePresenterManager.test.ts`
+- [ ] T051 [US1] Implement usePresenterManager hook (add/remove presenters during creation) at `/Users/ookura.keisuke/repos/UsoHontoGame/src/components/pages/GameCreatePage/hooks/usePresenterManager.ts`
+
+### Domain Components (TDD)
+
+- [ ] T052 [US1] Write component tests for GameForm at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/component/domain/GameForm.test.tsx`
+- [ ] T053 [US1] Implement GameForm component with name input at `/Users/ookura.keisuke/repos/UsoHontoGame/src/components/domain/game/GameForm/GameForm.tsx`
+- [ ] T054 [US1] Write component tests for PresenterManager at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/component/domain/PresenterManager.test.tsx`
+- [ ] T055 [US1] Implement PresenterManager component (add/configure presenters) at `/Users/ookura.keisuke/repos/UsoHontoGame/src/components/domain/game/PresenterManager/PresenterManager.tsx`
+- [ ] T056 [US1] Write component tests for EpisodeInput at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/component/domain/EpisodeInput.test.tsx`
+- [ ] T057 [US1] Implement EpisodeInput component (text + lie marker) at `/Users/ookura.keisuke/repos/UsoHontoGame/src/components/domain/game/EpisodeInput/EpisodeInput.tsx`
+
+### Page Components (TDD)
+
+- [ ] T058 [US1] Write component tests for GameCreatePage at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/component/pages/GameCreatePage.test.tsx`
+- [ ] T059 [US1] Implement GameCreatePage with name and presenter sections at `/Users/ookura.keisuke/repos/UsoHontoGame/src/components/pages/GameCreatePage/GameCreatePage.tsx`
+- [ ] T060 [US1] Create Next.js page wrapper at `/Users/ookura.keisuke/repos/UsoHontoGame/src/app/games/create/page.tsx`
+
+### E2E Tests
+
+- [ ] T061 [US1] Write E2E test for creating game with name only at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/e2e/game-creation.spec.ts`
+- [ ] T062 [US1] Write E2E test for creating game with name and presenters at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/e2e/game-creation.spec.ts`
+- [ ] T063 [US1] Write E2E test for validation (invalid player limit, name too long) at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/e2e/game-creation.spec.ts`
+
+**Independent Test Criteria**:
+- ✅ Can create game with name and player limit (stores in DB)
+- ✅ Can create game with name, player limit, and 1 presenter with 3 episodes
+- ✅ Validation prevents invalid player limits (0, 101, negative)
+- ✅ Validation prevents names over 100 characters
+- ✅ Newly created game has status '準備中'
+
+---
+
+## Phase 4: User Story 2 (P2) - Register Presenters and Episodes
+
+**Priority**: P2 - Content creation layer
+**Dependencies**: Phase 3 (US1) must complete
+**Acceptance Criteria**: Can add/update presenters with 3 episodes and one lie marker after game creation
+
+### Use Cases (TDD)
+
+- [ ] T064 [US2] Write unit tests for AddPresenter use case at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/unit/use-cases/AddPresenter.test.ts`
+- [ ] T065 [US2] Implement AddPresenter use case with validation at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/application/use-cases/presenters/AddPresenter.ts`
+- [ ] T066 [US2] Write unit tests for RemovePresenter use case at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/unit/use-cases/RemovePresenter.test.ts`
+- [ ] T067 [US2] Implement RemovePresenter use case at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/application/use-cases/presenters/RemovePresenter.ts`
+- [ ] T068 [US2] Write unit tests for UpdatePresenterEpisodes use case at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/unit/use-cases/UpdatePresenterEpisodes.test.ts`
+- [ ] T069 [US2] Implement UpdatePresenterEpisodes use case (exactly 3 episodes, 1 lie) at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/application/use-cases/presenters/UpdatePresenterEpisodes.ts`
+
+### Server Actions (TDD)
+
+- [ ] T070 [US2] Write integration tests for addPresenterAction at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/integration/api/game-actions.test.ts`
+- [ ] T071 [US2] Implement addPresenterAction at `/Users/ookura.keisuke/repos/UsoHontoGame/src/app/actions/game.ts`
+- [ ] T072 [US2] Write integration tests for removePresenterAction at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/integration/api/game-actions.test.ts`
+- [ ] T073 [US2] Implement removePresenterAction at `/Users/ookura.keisuke/repos/UsoHontoGame/src/app/actions/game.ts`
+- [ ] T074 [US2] Write integration tests for updatePresenterEpisodesAction at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/integration/api/game-actions.test.ts`
+- [ ] T075 [US2] Implement updatePresenterEpisodesAction at `/Users/ookura.keisuke/repos/UsoHontoGame/src/app/actions/game.ts`
+
+### Custom Hooks (TDD)
+
+- [ ] T076 [US2] Write unit tests for usePresenterList hook at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/unit/hooks/usePresenterList.test.ts`
+- [ ] T077 [US2] Implement usePresenterList hook at `/Users/ookura.keisuke/repos/UsoHontoGame/src/components/domain/game/PresenterList/hooks/usePresenterList.ts`
+- [ ] T078 [US2] Write unit tests for useEpisodeInput hook at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/unit/hooks/useEpisodeInput.test.ts`
+- [ ] T079 [US2] Implement useEpisodeInput hook with lie marker validation at `/Users/ookura.keisuke/repos/UsoHontoGame/src/components/domain/game/EpisodeInput/hooks/useEpisodeInput.ts`
+
+### Domain Components (TDD)
+
+- [ ] T080 [US2] Write component tests for PresenterList at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/component/domain/PresenterList.test.tsx`
+- [ ] T081 [US2] Implement PresenterList component (display/manage presenters) at `/Users/ookura.keisuke/repos/UsoHontoGame/src/components/domain/game/PresenterList/PresenterList.tsx`
+
+### E2E Tests
+
+- [ ] T082 [US2] Write E2E test for adding presenter with 3 episodes at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/e2e/presenter-management.spec.ts`
+- [ ] T083 [US2] Write E2E test for preventing >10 presenters at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/e2e/presenter-management.spec.ts`
+- [ ] T084 [US2] Write E2E test for lie marker validation (exactly 1) at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/e2e/presenter-management.spec.ts`
+- [ ] T085 [US2] Write E2E test for episode text length validation (max 1000) at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/e2e/presenter-management.spec.ts`
+
+**Independent Test Criteria**:
+- ✅ Can add presenter with 3 episodes to existing game
+- ✅ Can mark exactly one episode as lie per presenter
+- ✅ Cannot add more than 10 presenters
+- ✅ Cannot mark 0 or 2+ episodes as lie
+- ✅ Episode text validates max 1000 characters
+- ✅ Lie marker is confidential (not exposed in public APIs)
+
+---
+
+## Phase 5: User Story 3 (P2) - Manage Game Status
+
+**Priority**: P2 - Essential for game lifecycle
+**Dependencies**: Phase 4 (US2) must complete
+**Acceptance Criteria**: Can transition game status through 準備中 → 出題中 → 締切 with validation
+
+### Use Cases (TDD)
+
+- [ ] T086 [US3] Write unit tests for ChangeGameStatus use case at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/unit/use-cases/ChangeGameStatus.test.ts`
+- [ ] T087 [US3] Implement ChangeGameStatus use case with precondition validation at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/application/use-cases/games/ChangeGameStatus.ts`
+
+### Server Actions (TDD)
+
+- [ ] T088 [US3] Write integration tests for changeGameStatusAction at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/integration/api/game-actions.test.ts`
+- [ ] T089 [US3] Implement changeGameStatusAction at `/Users/ookura.keisuke/repos/UsoHontoGame/src/app/actions/game.ts`
+
+### Custom Hooks (TDD)
+
+- [ ] T090 [US3] Write unit tests for useGameStatus hook at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/unit/hooks/useGameStatus.test.ts`
+- [ ] T091 [US3] Implement useGameStatus hook (transition logic) at `/Users/ookura.keisuke/repos/UsoHontoGame/src/components/pages/GameEditPage/hooks/useGameStatus.ts`
+
+### UI Components
+
+- [ ] T092 [US3] Implement StatusBadge component for game status display at `/Users/ookura.keisuke/repos/UsoHontoGame/src/components/ui/StatusBadge/StatusBadge.tsx`
+- [ ] T093 [US3] Write component tests for StatusBadge at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/component/ui/StatusBadge.test.tsx`
+
+### E2E Tests
+
+- [ ] T094 [US3] Write E2E test for status transition 準備中 → 出題中 at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/e2e/game-status-transition.spec.ts`
+- [ ] T095 [US3] Write E2E test for status transition 出題中 → 締切 at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/e2e/game-status-transition.spec.ts`
+- [ ] T096 [US3] Write E2E test for validation (cannot transition without presenters) at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/e2e/game-status-transition.spec.ts`
+- [ ] T097 [US3] Write E2E test for validation (cannot transition with incomplete episodes) at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/e2e/game-status-transition.spec.ts`
+
+**Independent Test Criteria**:
+- ✅ Can transition from 準備中 to 出題中 when game has 1+ presenter with complete episodes
+- ✅ Cannot transition to 出題中 without presenters
+- ✅ Cannot transition to 出題中 if any presenter has <3 episodes
+- ✅ Cannot transition to 出題中 if any presenter lacks lie marker
+- ✅ Can transition from 出題中 to 締切 with no preconditions
+- ✅ Status change reflects on TOP page within 2 seconds
+
+---
+
+## Phase 6: User Story 4 (P3) - View and Manage Game List
+
+**Priority**: P3 - Convenience feature
+**Dependencies**: Phase 3 (US1) must complete (can start in parallel with Phase 4-5)
+**Acceptance Criteria**: Can view all created games with status, player limit, presenter count
+
+### Use Cases (TDD)
+
+- [ ] T098 [US4] Write unit tests for ListGames use case at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/unit/use-cases/ListGames.test.ts`
+- [ ] T099 [US4] Implement ListGames use case (filter by creator) at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/application/use-cases/games/ListGames.ts`
+- [ ] T100 [US4] Write unit tests for GetGame use case at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/unit/use-cases/GetGame.test.ts`
+- [ ] T101 [US4] Implement GetGame use case with authorization at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/application/use-cases/games/GetGame.ts`
+
+### Server Actions (TDD)
+
+- [ ] T102 [US4] Write integration tests for listGamesAction at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/integration/api/game-actions.test.ts`
+- [ ] T103 [US4] Implement listGamesAction at `/Users/ookura.keisuke/repos/UsoHontoGame/src/app/actions/game.ts`
+- [ ] T104 [US4] Write integration tests for getGameAction at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/integration/api/game-actions.test.ts`
+- [ ] T105 [US4] Implement getGameAction at `/Users/ookura.keisuke/repos/UsoHontoGame/src/app/actions/game.ts`
+
+### Custom Hooks (TDD)
+
+- [ ] T106 [US4] Write unit tests for useGameList hook at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/unit/hooks/useGameList.test.ts`
+- [ ] T107 [US4] Implement useGameList hook (fetching, filtering) at `/Users/ookura.keisuke/repos/UsoHontoGame/src/components/pages/GameListPage/hooks/useGameList.ts`
+
+### Domain Components (TDD)
+
+- [ ] T108 [US4] Write component tests for GameCard at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/component/domain/GameCard.test.tsx`
+- [ ] T109 [US4] Implement GameCard component (displays game summary) at `/Users/ookura.keisuke/repos/UsoHontoGame/src/components/domain/game/GameCard/GameCard.tsx`
+
+### Page Components (TDD)
+
+- [ ] T110 [US4] Write component tests for GameListPage at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/component/pages/GameListPage.test.tsx`
+- [ ] T111 [US4] Implement GameListPage component at `/Users/ookura.keisuke/repos/UsoHontoGame/src/components/pages/GameListPage/GameListPage.tsx`
+- [ ] T112 [US4] Create Next.js page wrapper at `/Users/ookura.keisuke/repos/UsoHontoGame/src/app/games/page.tsx`
+
+### E2E Tests
+
+- [ ] T113 [US4] Write E2E test for viewing game list with multiple games at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/e2e/game-list.spec.ts`
+- [ ] T114 [US4] Write E2E test for empty state (no games created) at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/e2e/game-list.spec.ts`
+- [ ] T115 [US4] Write E2E test for filtering by status at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/e2e/game-list.spec.ts`
+- [ ] T116 [US4] Write E2E test for navigation to create/edit from list at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/e2e/game-list.spec.ts`
+
+**Independent Test Criteria**:
+- ✅ Game list displays all games created by current moderator
+- ✅ Each game shows name, status, player limit, presenter count
+- ✅ Empty state shows message with "Create Game" button
+- ✅ Can filter by status (準備中/出題中/締切)
+- ✅ List loads in under 1 second for 50 games
+
+---
+
+## Phase 7: User Story 5 (P3) - Edit Existing Game
+
+**Priority**: P3 - Flexibility feature
+**Dependencies**: Phase 3-5 must complete
+**Acceptance Criteria**: Can edit game name, player limit, and presenters when status is 準備中
+
+### Use Cases (TDD)
+
+- [ ] T117 [US5] Write unit tests for UpdateGame use case at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/unit/use-cases/UpdateGame.test.ts`
+- [ ] T118 [US5] Implement UpdateGame use case with status validation at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/application/use-cases/games/UpdateGame.ts`
+
+### Server Actions (TDD)
+
+- [ ] T119 [US5] Write integration tests for updateGameAction at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/integration/api/game-actions.test.ts`
+- [ ] T120 [US5] Implement updateGameAction at `/Users/ookura.keisuke/repos/UsoHontoGame/src/app/actions/game.ts`
+
+### Page Components (TDD)
+
+- [ ] T121 [US5] Write component tests for GameEditPage at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/component/pages/GameEditPage.test.tsx`
+- [ ] T122 [US5] Implement GameEditPage component (reuses GameForm, PresenterManager) at `/Users/ookura.keisuke/repos/UsoHontoGame/src/components/pages/GameEditPage/GameEditPage.tsx`
+- [ ] T123 [US5] Create Next.js page wrapper at `/Users/ookura.keisuke/repos/UsoHontoGame/src/app/games/[id]/edit/page.tsx`
+
+### E2E Tests
+
+- [ ] T124 [US5] Write E2E test for editing game name and player limit at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/e2e/game-edit.spec.ts`
+- [ ] T125 [US5] Write E2E test for adding/removing presenters in edit mode at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/e2e/game-edit.spec.ts`
+- [ ] T126 [US5] Write E2E test for validation (cannot edit in 出題中/締切) at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/e2e/game-edit.spec.ts`
+- [ ] T127 [US5] Write E2E test for authorization (only creator can edit) at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/e2e/game-edit.spec.ts`
+
+**Independent Test Criteria**:
+- ✅ Can edit game name and player limit when status is 準備中
+- ✅ Can add/remove presenters when status is 準備中
+- ✅ Cannot edit presenter info when status is 出題中 or 締切
+- ✅ Only creator can access edit page (403 for others)
+- ✅ Changes persist and reflect immediately in game list
+
+---
+
+## Phase 8: User Story 6 (P3) - Delete Game
+
+**Priority**: P3 - Maintenance feature
+**Dependencies**: Phase 3-5 must complete (can run parallel with Phase 7)
+**Acceptance Criteria**: Can delete games with confirmation for active games
+
+### Use Cases (TDD)
+
+- [ ] T128 [US6] Write unit tests for DeleteGame use case at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/unit/use-cases/DeleteGame.test.ts`
+- [ ] T129 [US6] Implement DeleteGame use case with confirmation logic at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/application/use-cases/games/DeleteGame.ts`
+
+### Server Actions (TDD)
+
+- [ ] T130 [US6] Write integration tests for deleteGameAction at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/integration/api/game-actions.test.ts`
+- [ ] T131 [US6] Implement deleteGameAction with cascade delete at `/Users/ookura.keisuke/repos/UsoHontoGame/src/app/actions/game.ts`
+
+### UI Components (TDD)
+
+- [ ] T132 [US6] Write component tests for DeleteConfirmationModal at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/component/ui/DeleteConfirmationModal.test.tsx`
+- [ ] T133 [US6] Implement DeleteConfirmationModal component at `/Users/ookura.keisuke/repos/UsoHontoGame/src/components/ui/Modal/DeleteConfirmationModal.tsx`
+
+### E2E Tests
+
+- [ ] T134 [US6] Write E2E test for deleting game in 準備中 status at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/e2e/game-deletion.spec.ts`
+- [ ] T135 [US6] Write E2E test for confirmation modal for 出題中/締切 games at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/e2e/game-deletion.spec.ts`
+- [ ] T136 [US6] Write E2E test for cascade delete (presenters/episodes removed) at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/e2e/game-deletion.spec.ts`
+- [ ] T137 [US6] Write E2E test for authorization (only creator can delete) at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/e2e/game-deletion.spec.ts`
+
+**Independent Test Criteria**:
+- ✅ Can delete game in 準備中 status without confirmation
+- ✅ Confirmation modal appears for 出題中 or 締切 games
+- ✅ Deletion cascades to remove all presenters and episodes
+- ✅ Deleted game no longer appears in list
+- ✅ Only creator can delete game (403 for others)
+
+---
+
+## Phase 9: Polish & Integration
+
+**Purpose**: Final integration, performance optimization, error handling, and cross-feature testing.
+
+### Integration & Performance
+
+- [ ] T138 Run full test suite and ensure 95%+ coverage
+- [ ] T139 Performance test: Verify game creation completes in <2 seconds
+- [ ] T140 Performance test: Verify episode registration completes in <3 minutes
+- [ ] T141 Performance test: Verify game list loads in <1 second for 50 games
+- [ ] T142 Performance test: Verify status changes reflect on TOP page within 2 seconds
+
+### Error Handling & Edge Cases
+
+- [ ] T143 Add error boundaries for all page components at `/Users/ookura.keisuke/repos/UsoHontoGame/src/app/games/error.tsx`
+- [ ] T144 Implement loading states for all async operations
+- [ ] T145 Test edge case: Creating game with 0 or negative player limit
+- [ ] T146 Test edge case: Adding 11th presenter (should fail)
+- [ ] T147 Test edge case: Episode text exceeding 1000 characters
+- [ ] T148 Test edge case: Presenter with only 2 episodes (should fail transition)
+- [ ] T149 Test edge case: Presenter with 0 or 2+ lie markers (should fail)
+- [ ] T150 Test edge case: Concurrent edits by multiple users
+
+### Security Validation
+
+- [ ] T151 Audit all Server Actions for proper authorization checks
+- [ ] T152 Verify lie markers never exposed in public DTOs (EpisodeDto)
+- [ ] T153 Test unauthorized access to edit/delete operations (403 responses)
+- [ ] T154 Test session validation for all game operations
+
+### Documentation & Code Quality
+
+- [ ] T155 Add JSDoc comments to all public APIs and use cases
+- [ ] T156 Update API documentation at `/Users/ookura.keisuke/repos/UsoHontoGame/specs/002-game-preparation/contracts/game-actions.yaml`
+- [ ] T157 Run Biome linter and fix all issues
+- [ ] T158 Review and refactor for code duplication
+
+### Cross-Feature Integration
+
+- [ ] T159 Verify games with status 出題中 appear on TOP page (from 001-session-top-page)
+- [ ] T160 Test game visibility filtering on TOP page based on status
+- [ ] T161 Verify session management integration (creator ID from cookies)
+- [ ] T162 Test revalidation and cache invalidation for all mutations
+
+---
+
+## Task Summary
+
+**Total Tasks**: 162
+**By Phase**:
+- Phase 1 (Setup): 8 tasks
+- Phase 2 (Foundational): 34 tasks
+- Phase 3 (US1 - P1): 21 tasks
+- Phase 4 (US2 - P2): 22 tasks
+- Phase 5 (US3 - P2): 12 tasks
+- Phase 6 (US4 - P3): 19 tasks
+- Phase 7 (US5 - P3): 11 tasks
+- Phase 8 (US6 - P3): 10 tasks
+- Phase 9 (Polish): 25 tasks
+
+**Parallelizable Tasks**: 28 tasks marked with [P]
+
+**Estimated Completion Time**:
+- Phase 1: 1 day
+- Phase 2: 3 days
+- Phase 3: 2 days
+- Phase 4: 2 days
+- Phase 5: 1.5 days
+- Phase 6: 2 days (can overlap with 4-5)
+- Phase 7: 1.5 days
+- Phase 8: 1 day (can overlap with 7)
+- Phase 9: 2 days
+**Total**: ~14-16 days with parallel execution
+
+## Success Criteria Checklist
+
+- [ ] SC-001: Game creation completes in under 2 minutes
+- [ ] SC-002: Episode registration completes in under 3 minutes
+- [ ] SC-003: Status changes reflect on TOP page within 2 seconds
+- [ ] SC-004: Game list loads in under 1 second (up to 50 games)
+- [ ] SC-005: 95%+ of moderators create first game without errors
+- [ ] SC-006: Zero incidents of lie marker exposure
+- [ ] SC-007: Game creation completion rate above 90%
+
+## Notes
+
+- All tasks follow TDD approach: tests written before implementation
+- [P] marker indicates tasks that can be executed in parallel (different files, no dependencies)
+- [US#] marker indicates which user story the task belongs to
+- File paths are absolute from repository root
+- Integration tests require database setup (Prisma with test database)
+- E2E tests require running Next.js dev server
+- Status transitions enforce business rules at domain entity level
+- Confidential data (lie markers) protected by separate DTOs
+- Cascade deletion handled at database level via Prisma
