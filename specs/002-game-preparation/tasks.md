@@ -40,11 +40,11 @@ Phase 9: Integration & Polish
 
 **Purpose**: Initialize project structure and update database schema for game name and presenter/episode entities.
 
-- [ ] T001 [P] Update Prisma schema to add `name` field to Game model at `/Users/ookura.keisuke/repos/UsoHontoGame/prisma/schema.prisma`
-- [ ] T002 [P] Add Presenter model to Prisma schema at `/Users/ookura.keisuke/repos/UsoHontoGame/prisma/schema.prisma`
-- [ ] T003 [P] Add Episode model to Prisma schema with cascade delete at `/Users/ookura.keisuke/repos/UsoHontoGame/prisma/schema.prisma`
-- [ ] T004 Create Prisma migration for game name, presenters, and episodes
-- [ ] T005 Run migration and verify schema changes in dev.db
+- [X] T001 [P] Update Prisma schema to add `name` field to Game model at `/Users/ookura.keisuke/repos/UsoHontoGame/prisma/schema.prisma`
+- [X] T002 [P] Add Presenter model to Prisma schema at `/Users/ookura.keisuke/repos/UsoHontoGame/prisma/schema.prisma`
+- [X] T003 [P] Add Episode model to Prisma schema with cascade delete at `/Users/ookura.keisuke/repos/UsoHontoGame/prisma/schema.prisma`
+- [X] T004 Create Prisma migration for game name, presenters, and episodes
+- [X] T005 Run migration and verify schema changes in dev.db
 - [ ] T006 [P] Create TypeScript types for Presenter at `/Users/ookura.keisuke/repos/UsoHontoGame/src/types/presenter.ts`
 - [ ] T007 [P] Create TypeScript types for Episode at `/Users/ookura.keisuke/repos/UsoHontoGame/src/types/episode.ts`
 - [ ] T008 Update existing Game types to include name and presenters at `/Users/ookura.keisuke/repos/UsoHontoGame/src/types/game.ts`
@@ -68,31 +68,31 @@ Phase 9: Integration & Polish
 
 ### Domain Entities (TDD)
 
-- [ ] T017 Write unit tests for Episode entity at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/unit/entities/Episode.test.ts`
-- [ ] T018 Implement Episode entity with isLie field at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/domain/entities/Episode.ts`
-- [ ] T019 Write unit tests for Presenter entity at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/unit/entities/Presenter.test.ts`
-- [ ] T020 Implement Presenter entity with episode management methods at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/domain/entities/Presenter.ts`
-- [ ] T021 Write unit tests for Game entity extensions (name, presenters) at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/unit/entities/Game.test.ts`
-- [ ] T022 Extend Game entity with name field and presenter management at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/domain/entities/Game.ts`
-- [ ] T023 Add status transition methods to Game entity (startAccepting, close) at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/domain/entities/Game.ts`
+- [X] T017 Write unit tests for Episode entity at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/unit/entities/Episode.test.ts`
+- [X] T018 Implement Episode entity with isLie field at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/domain/entities/Episode.ts`
+- [X] T019 Write unit tests for Presenter entity at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/unit/entities/Presenter.test.ts`
+- [X] T020 Implement Presenter entity with episode management methods at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/domain/entities/Presenter.ts`
+- [X] T021 Write unit tests for Game entity extensions (name, presenters) at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/unit/entities/Game.test.ts`
+- [X] T022 Extend Game entity with name field and presenter management at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/domain/entities/Game.ts`
+- [X] T023 Add status transition methods to Game entity (startAccepting, close) at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/domain/entities/Game.ts`
 
 ### Domain Errors
 
 - [ ] T024 [P] Create PresenterLimitError at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/domain/errors/PresenterLimitError.ts`
 - [ ] T025 [P] Create EpisodeLimitError at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/domain/errors/EpisodeLimitError.ts`
-- [ ] T026 [P] Create InvalidStatusTransitionError at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/domain/errors/InvalidStatusTransitionError.ts`
+- [X] T026 [P] Create InvalidStatusTransitionError at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/domain/errors/InvalidStatusTransitionError.ts`
 
 ### Zod Validation Schemas
 
 - [ ] T027 [P] Create Presenter validation schemas at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/domain/schemas/presenterSchemas.ts`
 - [ ] T028 [P] Create Episode validation schemas at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/domain/schemas/episodeSchemas.ts`
-- [ ] T029 Extend Game validation schemas with name and presenters at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/domain/schemas/gameSchemas.ts`
+- [X] T029 Extend Game validation schemas with name and presenters at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/domain/schemas/gameSchemas.ts`
 
 ### Repository Interfaces
 
 - [ ] T030 [P] Create PresenterRepository interface at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/domain/repositories/PresenterRepository.ts`
 - [ ] T031 [P] Create EpisodeRepository interface at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/domain/repositories/EpisodeRepository.ts`
-- [ ] T032 Extend GameRepository interface with presenter/episode methods at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/domain/repositories/GameRepository.ts`
+- [X] T032 Extend GameRepository interface with presenter/episode methods at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/domain/repositories/GameRepository.ts`
 
 ### Infrastructure - Repositories (TDD)
 
@@ -100,8 +100,8 @@ Phase 9: Integration & Polish
 - [ ] T034 Implement PrismaPresenterRepository at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/infrastructure/repositories/PrismaPresenterRepository.ts`
 - [ ] T035 Write integration tests for PrismaEpisodeRepository at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/integration/repositories/PrismaEpisodeRepository.test.ts`
 - [ ] T036 Implement PrismaEpisodeRepository with cascade delete at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/infrastructure/repositories/PrismaEpisodeRepository.ts`
-- [ ] T037 Write integration tests for PrismaGameRepository extensions at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/integration/repositories/PrismaGameRepository.test.ts`
-- [ ] T038 Extend PrismaGameRepository with presenter/episode operations at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/infrastructure/repositories/PrismaGameRepository.ts`
+- [X] T037 Write integration tests for PrismaGameRepository extensions at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/integration/repositories/PrismaGameRepository.test.ts`
+- [X] T038 Extend PrismaGameRepository with presenter/episode operations at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/infrastructure/repositories/PrismaGameRepository.ts`
 
 ### DTOs
 
@@ -119,14 +119,14 @@ Phase 9: Integration & Polish
 
 ### Use Cases (TDD)
 
-- [ ] T043 [US1] Write unit tests for CreateGame use case with name field at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/unit/use-cases/CreateGame.test.ts`
-- [ ] T044 [US1] Extend CreateGame use case to accept name and presenters at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/application/use-cases/games/CreateGame.ts`
+- [X] T043 [US1] Write unit tests for CreateGame use case with name field at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/unit/use-cases/CreateGame.test.ts`
+- [X] T044 [US1] Extend CreateGame use case to accept name and presenters at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/application/use-cases/games/CreateGame.ts`
 - [ ] T045 [US1] Create CreateGameRequest DTO with name and presenters at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/application/dto/requests/CreateGameRequest.ts`
 
 ### Server Actions (TDD)
 
 - [ ] T046 [US1] Write integration tests for createGameAction at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/integration/api/game-actions.test.ts`
-- [ ] T047 [US1] Implement createGameAction with name and presenter support at `/Users/ookura.keisuke/repos/UsoHontoGame/src/app/actions/game.ts`
+- [X] T047 [US1] Implement createGameAction with name and presenter support at `/Users/ookura.keisuke/repos/UsoHontoGame/src/app/actions/game.ts`
 
 ### Custom Hooks (TDD)
 
@@ -138,7 +138,7 @@ Phase 9: Integration & Polish
 ### Domain Components (TDD)
 
 - [ ] T052 [US1] Write component tests for GameForm at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/component/domain/GameForm.test.tsx`
-- [ ] T053 [US1] Implement GameForm component with name input at `/Users/ookura.keisuke/repos/UsoHontoGame/src/components/domain/game/GameForm/GameForm.tsx`
+- [X] T053 [US1] Implement GameForm component with name input at `/Users/ookura.keisuke/repos/UsoHontoGame/src/components/domain/game/GameForm/GameForm.tsx`
 - [ ] T054 [US1] Write component tests for PresenterManager at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/component/domain/PresenterManager.test.tsx`
 - [ ] T055 [US1] Implement PresenterManager component (add/configure presenters) at `/Users/ookura.keisuke/repos/UsoHontoGame/src/components/domain/game/PresenterManager/PresenterManager.tsx`
 - [ ] T056 [US1] Write component tests for EpisodeInput at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/component/domain/EpisodeInput.test.tsx`
@@ -173,10 +173,10 @@ Phase 9: Integration & Polish
 
 ### Use Cases (TDD)
 
-- [ ] T064 [US2] Write unit tests for AddPresenter use case at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/unit/use-cases/AddPresenter.test.ts`
-- [ ] T065 [US2] Implement AddPresenter use case with validation at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/application/use-cases/presenters/AddPresenter.ts`
+- [X] T064 [US2] Write unit tests for AddPresenter use case at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/unit/use-cases/AddPresenter.test.ts`
+- [X] T065 [US2] Implement AddPresenter use case with validation at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/application/use-cases/presenters/AddPresenter.ts`
 - [ ] T066 [US2] Write unit tests for RemovePresenter use case at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/unit/use-cases/RemovePresenter.test.ts`
-- [ ] T067 [US2] Implement RemovePresenter use case at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/application/use-cases/presenters/RemovePresenter.ts`
+- [X] T067 [US2] Implement RemovePresenter use case at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/application/use-cases/presenters/RemovePresenter.ts`
 - [ ] T068 [US2] Write unit tests for UpdatePresenterEpisodes use case at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/unit/use-cases/UpdatePresenterEpisodes.test.ts`
 - [ ] T069 [US2] Implement UpdatePresenterEpisodes use case (exactly 3 episodes, 1 lie) at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/application/use-cases/presenters/UpdatePresenterEpisodes.ts`
 
@@ -232,7 +232,7 @@ Phase 9: Integration & Polish
 ### Server Actions (TDD)
 
 - [ ] T088 [US3] Write integration tests for changeGameStatusAction at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/integration/api/game-actions.test.ts`
-- [ ] T089 [US3] Implement changeGameStatusAction at `/Users/ookura.keisuke/repos/UsoHontoGame/src/app/actions/game.ts`
+- [X] T089 [US3] Implement changeGameStatusAction at `/Users/ookura.keisuke/repos/UsoHontoGame/src/app/actions/game.ts`
 
 ### Custom Hooks (TDD)
 
@@ -270,9 +270,9 @@ Phase 9: Integration & Polish
 ### Use Cases (TDD)
 
 - [ ] T098 [US4] Write unit tests for ListGames use case at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/unit/use-cases/ListGames.test.ts`
-- [ ] T099 [US4] Implement ListGames use case (filter by creator) at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/application/use-cases/games/ListGames.ts`
+- [X] T099 [US4] Implement ListGames use case (filter by creator) at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/application/use-cases/games/ListGames.ts`
 - [ ] T100 [US4] Write unit tests for GetGame use case at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/unit/use-cases/GetGame.test.ts`
-- [ ] T101 [US4] Implement GetGame use case with authorization at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/application/use-cases/games/GetGame.ts`
+- [X] T101 [US4] Implement GetGame use case with authorization at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/application/use-cases/games/GetGame.ts`
 
 ### Server Actions (TDD)
 
@@ -322,12 +322,12 @@ Phase 9: Integration & Polish
 ### Use Cases (TDD)
 
 - [ ] T117 [US5] Write unit tests for UpdateGame use case at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/unit/use-cases/UpdateGame.test.ts`
-- [ ] T118 [US5] Implement UpdateGame use case with status validation at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/application/use-cases/games/UpdateGame.ts`
+- [X] T118 [US5] Implement UpdateGame use case with status validation at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/application/use-cases/games/UpdateGame.ts`
 
 ### Server Actions (TDD)
 
 - [ ] T119 [US5] Write integration tests for updateGameAction at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/integration/api/game-actions.test.ts`
-- [ ] T120 [US5] Implement updateGameAction at `/Users/ookura.keisuke/repos/UsoHontoGame/src/app/actions/game.ts`
+- [X] T120 [US5] Implement updateGameAction at `/Users/ookura.keisuke/repos/UsoHontoGame/src/app/actions/game.ts`
 
 ### Page Components (TDD)
 
@@ -360,12 +360,12 @@ Phase 9: Integration & Polish
 ### Use Cases (TDD)
 
 - [ ] T128 [US6] Write unit tests for DeleteGame use case at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/unit/use-cases/DeleteGame.test.ts`
-- [ ] T129 [US6] Implement DeleteGame use case with confirmation logic at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/application/use-cases/games/DeleteGame.ts`
+- [X] T129 [US6] Implement DeleteGame use case with confirmation logic at `/Users/ookura.keisuke/repos/UsoHontoGame/src/server/application/use-cases/games/DeleteGame.ts`
 
 ### Server Actions (TDD)
 
 - [ ] T130 [US6] Write integration tests for deleteGameAction at `/Users/ookura.keisuke/repos/UsoHontoGame/tests/integration/api/game-actions.test.ts`
-- [ ] T131 [US6] Implement deleteGameAction with cascade delete at `/Users/ookura.keisuke/repos/UsoHontoGame/src/app/actions/game.ts`
+- [X] T131 [US6] Implement deleteGameAction with cascade delete at `/Users/ookura.keisuke/repos/UsoHontoGame/src/app/actions/game.ts`
 
 ### UI Components (TDD)
 
