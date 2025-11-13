@@ -6,6 +6,7 @@ import {
 } from '@/server/domain/entities/Game';
 import { GameId } from '@/server/domain/value-objects/GameId';
 import { GameStatus } from '@/server/domain/value-objects/GameStatus';
+import { InvalidStatusTransitionError } from '@/server/domain/errors/InvalidStatusTransitionError';
 
 describe('Game', () => {
   const validGameId = new GameId('550e8400-e29b-41d4-a716-446655440000');
@@ -221,6 +222,77 @@ describe('Game', () => {
       expect(game.currentPlayers).toBe(5);
       expect(game.createdAt).toBe(now);
       expect(game.updatedAt).toBe(now);
+    });
+  });
+
+  describe('startAccepting (FR-001)', () => {
+    it('should transition from 準備中 to 出題中', () => {
+      const game = new Game(validGameId, 'Test Game', preparingStatus, 10, 5, now, now);
+      const initialUpdatedAt = game.updatedAt;
+
+      game.startAccepting();
+
+      expect(game.status.toString()).toBe('出題中');
+      expect(game.status.isAcceptingResponses()).toBe(true);
+      expect(game.updatedAt.getTime()).toBeGreaterThanOrEqual(initialUpdatedAt.getTime());
+    });
+
+    it('should throw InvalidStatusTransitionError from 出題中', () => {
+      const game = new Game(validGameId, 'Test Game', acceptingStatus, 10, 5, now, now);
+
+      expect(() => game.startAccepting()).toThrow(InvalidStatusTransitionError);
+      expect(() => game.startAccepting()).toThrow('Can only start accepting from 準備中 status');
+    });
+
+    it('should throw InvalidStatusTransitionError from 締切', () => {
+      const game = new Game(validGameId, 'Test Game', closedStatus, 10, 5, now, now);
+
+      expect(() => game.startAccepting()).toThrow(InvalidStatusTransitionError);
+      expect(() => game.startAccepting()).toThrow('Can only start accepting from 準備中 status');
+    });
+  });
+
+  describe('close (FR-001)', () => {
+    it('should transition from 出題中 to 締切', () => {
+      const game = new Game(validGameId, 'Test Game', acceptingStatus, 10, 5, now, now);
+      const initialUpdatedAt = game.updatedAt;
+
+      game.close();
+
+      expect(game.status.toString()).toBe('締切');
+      expect(game.status.isClosed()).toBe(true);
+      expect(game.updatedAt.getTime()).toBeGreaterThanOrEqual(initialUpdatedAt.getTime());
+    });
+
+    it('should throw InvalidStatusTransitionError from 準備中', () => {
+      const game = new Game(validGameId, 'Test Game', preparingStatus, 10, 5, now, now);
+
+      expect(() => game.close()).toThrow(InvalidStatusTransitionError);
+      expect(() => game.close()).toThrow('Can only close from 出題中 status');
+    });
+
+    it('should throw InvalidStatusTransitionError from 締切', () => {
+      const game = new Game(validGameId, 'Test Game', closedStatus, 10, 5, now, now);
+
+      expect(() => game.close()).toThrow(InvalidStatusTransitionError);
+      expect(() => game.close()).toThrow('Can only close from 出題中 status');
+    });
+  });
+
+  describe('canEdit (FR-014)', () => {
+    it('should return true for 準備中 status', () => {
+      const game = new Game(validGameId, 'Test Game', preparingStatus, 10, 5, now, now);
+      expect(game.canEdit()).toBe(true);
+    });
+
+    it('should return false for 出題中 status', () => {
+      const game = new Game(validGameId, 'Test Game', acceptingStatus, 10, 5, now, now);
+      expect(game.canEdit()).toBe(false);
+    });
+
+    it('should return false for 締切 status', () => {
+      const game = new Game(validGameId, 'Test Game', closedStatus, 10, 5, now, now);
+      expect(game.canEdit()).toBe(false);
     });
   });
 });

@@ -55,3 +55,12 @@ tests/coverage/
 /test-results/
 /playwright-report/
 /playwright/.cache/
+
+# Prisma
+/prisma/dev.db
+/prisma/dev.db-journal
+/prisma/.migrate
+/prisma/migrations/.migration_lock
+node_modules/.prisma/
+
+/src/generated/prisma

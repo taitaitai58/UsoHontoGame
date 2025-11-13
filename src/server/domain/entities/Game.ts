@@ -1,8 +1,11 @@
 // Game entity
-// Represents a game instance in the system
+// Feature: 002-game-preparation
+// Represents a game instance with status transitions and presenter management
 
 import type { GameId } from '../value-objects/GameId';
-import type { GameStatus } from '../value-objects/GameStatus';
+import { GameStatus } from '../value-objects/GameStatus';
+import { InvalidStatusTransitionError } from '../errors/InvalidStatusTransitionError';
+import { ValidationError } from '../errors/ValidationError';
 
 /**
  * Error thrown when game name is invalid
@@ -30,31 +33,34 @@ export class InvalidPlayerCountError extends Error {
  */
 export class Game {
   private _id: GameId;
-  private _name: string;
+  private _name: string | null;
   private _status: GameStatus;
   private _maxPlayers: number;
   private _currentPlayers: number;
   private _createdAt: Date;
   private _updatedAt: Date;
+  private _creatorId: string;
 
   /**
    * Creates a new Game
    * @param id Unique game identifier
-   * @param name Game display name
+   * @param name Game display name (optional, max 100 chars, defaults to UUID for display)
    * @param status Current game status
    * @param maxPlayers Maximum number of players
    * @param currentPlayers Current number of registered players
    * @param createdAt When the game was created
    * @param updatedAt When the game was last updated
+   * @param creatorId Session ID of the moderator who created the game
    */
   constructor(
     id: GameId,
-    name: string,
+    name: string | null,
     status: GameStatus,
     maxPlayers: number,
     currentPlayers: number,
     createdAt: Date,
-    updatedAt: Date
+    updatedAt: Date,
+    creatorId: string = ""
   ) {
     this._id = id;
     this._name = name;
@@ -63,6 +69,7 @@ export class Game {
     this._currentPlayers = currentPlayers;
     this._createdAt = createdAt;
     this._updatedAt = updatedAt;
+    this._creatorId = creatorId;
     this.validate();
   }
 
@@ -74,10 +81,17 @@ export class Game {
   }
 
   /**
-   * Gets the game name
+   * Gets the game name (optional)
    */
-  get name(): string {
+  get name(): string | null {
     return this._name;
+  }
+
+  /**
+   * Gets the display name (returns ID if name is null)
+   */
+  get displayName(): string {
+    return this._name || this._id.toString();
   }
 
   /**
@@ -116,6 +130,13 @@ export class Game {
   }
 
   /**
+   * Gets the creator/moderator session ID
+   */
+  get creatorId(): string {
+    return this._creatorId;
+  }
+
+  /**
    * Gets the number of available slots (derived property)
    */
   get availableSlots(): number {
@@ -131,12 +152,18 @@ export class Game {
 
   /**
    * Validates game invariants
-   * @throws EmptyGameNameError if name is empty
+   * @throws EmptyGameNameError if name is provided but empty
    * @throws InvalidPlayerCountError if player counts are invalid
    */
   validate(): void {
-    if (this._name.trim() === '') {
-      throw new EmptyGameNameError();
+    // Validate name if provided (max 100 chars as per spec)
+    if (this._name !== null) {
+      if (this._name.trim() === '') {
+        throw new EmptyGameNameError();
+      }
+      if (this._name.length > 100) {
+        throw new ValidationError('Game name must be 100 characters or less');
+      }
     }
 
     if (this._maxPlayers <= 0) {
@@ -181,5 +208,69 @@ export class Game {
     }
     this._currentPlayers--;
     this._updatedAt = new Date();
+  }
+
+  /**
+   * Updates the maximum player limit
+   * Can only be done when in preparation status
+   * New limit must be >= current players
+   * @param newLimit New maximum player limit (1-100)
+   * @throws ValidationError if limit is invalid or less than current players
+   */
+  updatePlayerLimit(newLimit: number): void {
+    // Validate range
+    if (newLimit < 1 || newLimit > 100) {
+      throw new ValidationError('Player limit must be between 1 and 100');
+    }
+
+    // New limit must be >= current players
+    if (newLimit < this._currentPlayers) {
+      throw new ValidationError(
+        `New player limit (${newLimit}) cannot be less than current players (${this._currentPlayers})`
+      );
+    }
+
+    this._maxPlayers = newLimit;
+    this._updatedAt = new Date();
+  }
+
+  /**
+   * Transitions game from 準備中 to 出題中 (FR-001)
+   * @throws InvalidStatusTransitionError if not in 準備中 status
+   */
+  startAccepting(): void {
+    if (!this._status.isPreparation()) {
+      throw new InvalidStatusTransitionError(
+        this._status.toString(),
+        '出題中',
+        'Can only start accepting from 準備中 status'
+      );
+    }
+    this._status = GameStatus.acceptingResponses();
+    this._updatedAt = new Date();
+  }
+
+  /**
+   * Transitions game from 出題中 to 締切 (FR-001)
+   * @throws InvalidStatusTransitionError if not in 出題中 status
+   */
+  close(): void {
+    if (!this._status.isAcceptingResponses()) {
+      throw new InvalidStatusTransitionError(
+        this._status.toString(),
+        '締切',
+        'Can only close from 出題中 status'
+      );
+    }
+    this._status = GameStatus.closed();
+    this._updatedAt = new Date();
+  }
+
+  /**
+   * Checks if game can be edited (FR-014)
+   * Only games in 準備中 status can be edited
+   */
+  canEdit(): boolean {
+    return this._status.canEdit();
   }
 }

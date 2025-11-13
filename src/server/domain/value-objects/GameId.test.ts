@@ -90,4 +90,26 @@ describe('GameId', () => {
       expect(gameId.value).toBe(value);
     });
   });
+
+  describe('static factories', () => {
+    it('should generate a new valid GameId', () => {
+      const gameId = GameId.generate();
+      expect(gameId).toBeInstanceOf(GameId);
+      expect(gameId.value).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+    });
+
+    it('should generate unique IDs', () => {
+      const gameId1 = GameId.generate();
+      const gameId2 = GameId.generate();
+      expect(gameId1.equals(gameId2)).toBe(false);
+    });
+
+    it('should generate UUID v4 format', () => {
+      const gameId = GameId.generate();
+      // Check version 4 (character at position 14 should be '4')
+      expect(gameId.value[14]).toBe('4');
+      // Check variant (character at position 19 should be 8, 9, a, or b)
+      expect(['8', '9', 'a', 'b']).toContain(gameId.value[19].toLowerCase());
+    });
+  });
 });

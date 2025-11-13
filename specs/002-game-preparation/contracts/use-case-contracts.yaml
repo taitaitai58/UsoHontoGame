@@ -1,0 +1,402 @@
+# Use Case Contracts: Game Preparation
+# Feature: 002-game-preparation
+# Layer: Application Layer (Clean Architecture)
+# Validation: Zod schemas validate input at Server Action boundary before reaching use cases
+#
+# Note: Use cases assume input is already validated. Zod validation happens in Server Actions.
+# Use cases perform domain-level business rule validation (e.g., status transitions, entity invariants).
+
+use_cases:
+  CreateGame:
+    description: Create a new game with validation (FR-001, FR-002, FR-008)
+    execute:
+      input:
+        creatorId:
+          type: string
+          description: Session ID of the moderator creating the game
+        playerLimit:
+          type: integer
+          minimum: 1
+          maximum: 100
+      output:
+        type: Game
+        description: The created game entity in 準備中 status
+      throws:
+        - ValidationError: Player limit validation failed
+        - RepositoryError: Failed to persist game
+    dependencies:
+      repositories:
+        - IGameRepository
+    requirements:
+      - FR-001
+      - FR-002
+      - FR-008
+      - FR-017
+
+  UpdateGameSettings:
+    description: Update game configuration when in 準備中 status (FR-013)
+    execute:
+      input:
+        gameId:
+          type: GameId
+        creatorId:
+          type: string
+          description: For authorization check
+        playerLimit:
+          type: integer
+          minimum: 1
+          maximum: 100
+      output:
+        type: void
+      throws:
+        - UnauthorizedError: User is not the game creator
+        - ValidationError: Player limit validation failed
+        - InvalidStatusError: Game not in 準備中 status
+        - NotFoundError: Game not found
+    dependencies:
+      repositories:
+        - IGameRepository
+    requirements:
+      - FR-013
+      - FR-014
+      - FR-017
+
+  DeleteGame:
+    description: Delete a game and cascade to presenters/episodes (FR-015, FR-016)
+    execute:
+      input:
+        gameId:
+          type: GameId
+        creatorId:
+          type: string
+          description: For authorization check
+        confirmed:
+          type: boolean
+          description: Whether user confirmed deletion for active games
+      output:
+        type: void
+      throws:
+        - UnauthorizedError: User is not the game creator
+        - ConfirmationRequiredError: Game in 出題中 or 締切 requires confirmation
+        - NotFoundError: Game not found
+    dependencies:
+      repositories:
+        - IGameRepository
+    requirements:
+      - FR-015
+      - FR-016
+
+  StartAcceptingResponses:
+    description: Transition game to 出題中 with validation (FR-009, FR-011)
+    execute:
+      input:
+        gameId:
+          type: GameId
+        creatorId:
+          type: string
+          description: For authorization check
+      output:
+        type: void
+      throws:
+        - UnauthorizedError: User is not the game creator
+        - ValidationError: Game validation failed (no presenters, incomplete episodes)
+        - InvalidStatusError: Game not in 準備中 status
+        - NotFoundError: Game not found
+    validation:
+      - Game must be in 準備中 status
+      - Game must have at least 1 presenter (FR-011)
+      - All presenters must have exactly 3 episodes (FR-018)
+      - All presenters must have exactly 1 episode marked as lie (FR-019)
+    dependencies:
+      repositories:
+        - IGameRepository
+    requirements:
+      - FR-009
+      - FR-011
+      - FR-018
+      - FR-019
+
+  CloseGame:
+    description: Transition game to 締切 status (FR-010)
+    execute:
+      input:
+        gameId:
+          type: GameId
+        creatorId:
+          type: string
+          description: For authorization check
+      output:
+        type: void
+      throws:
+        - UnauthorizedError: User is not the game creator
+        - InvalidStatusError: Game not in 出題中 status
+        - NotFoundError: Game not found
+    dependencies:
+      repositories:
+        - IGameRepository
+    requirements:
+      - FR-010
+
+  GetGamesByCreator:
+    description: List all games created by a moderator (FR-012)
+    execute:
+      input:
+        creatorId:
+          type: string
+          description: Session ID of the moderator
+      output:
+        type: GameDto[]
+        description: List of game summaries
+      throws:
+        - RepositoryError: Failed to fetch games
+    dependencies:
+      repositories:
+        - IGameRepository
+    requirements:
+      - FR-012
+
+  GetGameDetail:
+    description: Get full game details for editing (FR-021)
+    execute:
+      input:
+        gameId:
+          type: GameId
+        requesterId:
+          type: string
+          description: For authorization check
+      output:
+        type: GameDetailDto
+        description: Full game data with presenters and episodes
+      throws:
+        - UnauthorizedError: User is not the game creator
+        - NotFoundError: Game not found
+    dependencies:
+      repositories:
+        - IGameRepository
+    requirements:
+      - FR-021
+
+  AddPresenter:
+    description: Add a presenter to a game (FR-003)
+    execute:
+      input:
+        gameId:
+          type: GameId
+        nickname:
+          type: string
+          description: Session nickname of presenter
+        creatorId:
+          type: string
+          description: For authorization check
+      output:
+        type: Presenter
+      throws:
+        - UnauthorizedError: User is not the game creator
+        - ValidationError: Maximum 10 presenters exceeded
+        - InvalidStatusError: Game not in 準備中 status
+        - NotFoundError: Game not found
+    validation:
+      - Game must be in 準備中 status (FR-014)
+      - Game must have fewer than 10 presenters (FR-003)
+    dependencies:
+      repositories:
+        - IGameRepository
+    requirements:
+      - FR-003
+      - FR-014
+
+  RemovePresenter:
+    description: Remove a presenter and cascade delete episodes (FR-014)
+    execute:
+      input:
+        gameId:
+          type: GameId
+        presenterId:
+          type: string
+        creatorId:
+          type: string
+          description: For authorization check
+      output:
+        type: void
+      throws:
+        - UnauthorizedError: User is not the game creator
+        - InvalidStatusError: Game not in 準備中 status
+        - NotFoundError: Game or presenter not found
+    dependencies:
+      repositories:
+        - IGameRepository
+    requirements:
+      - FR-014
+
+  AddEpisode:
+    description: Add an episode for a presenter (FR-004, FR-005)
+    execute:
+      input:
+        presenterId:
+          type: string
+        text:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        isLie:
+          type: boolean
+        requesterId:
+          type: string
+          description: For authorization check (presenter or creator)
+      output:
+        type: Episode
+      throws:
+        - UnauthorizedError: User is not the presenter or game creator
+        - ValidationError: Maximum 3 episodes, text length, or lie marker rules violated
+        - InvalidStatusError: Game not in 準備中 status
+        - NotFoundError: Presenter not found
+    validation:
+      - Presenter must have fewer than 3 episodes (FR-004)
+      - Text must be 1-1000 characters (Assumption 3)
+      - If isLie is true, no other episode can have isLie=true (FR-005)
+      - Game must be in 準備中 status (FR-014)
+    dependencies:
+      repositories:
+        - IGameRepository
+    requirements:
+      - FR-004
+      - FR-005
+      - FR-014
+
+  UpdateEpisode:
+    description: Update episode text or lie marker
+    execute:
+      input:
+        episodeId:
+          type: string
+        text:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        isLie:
+          type: boolean
+        requesterId:
+          type: string
+          description: For authorization check
+      output:
+        type: void
+      throws:
+        - UnauthorizedError: User is not the presenter or game creator
+        - ValidationError: Text length or lie marker rules violated
+        - InvalidStatusError: Game not in 準備中 status
+        - NotFoundError: Episode not found
+    validation:
+      - If isLie is true, no other episode for same presenter can have isLie=true (FR-005)
+      - Game must be in 準備中 status (FR-014)
+    dependencies:
+      repositories:
+        - IGameRepository
+    requirements:
+      - FR-005
+      - FR-014
+
+  RemoveEpisode:
+    description: Delete an episode
+    execute:
+      input:
+        episodeId:
+          type: string
+        requesterId:
+          type: string
+          description: For authorization check
+      output:
+        type: void
+      throws:
+        - UnauthorizedError: User is not the presenter or game creator
+        - InvalidStatusError: Game not in 準備中 status
+        - NotFoundError: Episode not found
+    dependencies:
+      repositories:
+        - IGameRepository
+    requirements:
+      - FR-014
+
+  GetPresenterEpisodesWithLie:
+    description: Get presenter episodes including lie marker (FR-006)
+    execute:
+      input:
+        presenterId:
+          type: string
+        requesterId:
+          type: string
+          description: For authorization check
+      output:
+        type: PresenterWithLieDto
+        description: Presenter data with episodes including isLie field
+      throws:
+        - UnauthorizedError: User is not the presenter or game creator
+        - NotFoundError: Presenter not found
+    security:
+      - Only presenter or game creator can access lie marker (FR-006)
+      - Public APIs must NEVER expose isLie field
+    dependencies:
+      repositories:
+        - IGameRepository
+    requirements:
+      - FR-006
+
+validation_rules:
+  game:
+    playerLimit:
+      min: 1
+      max: 100
+      error: "プレイヤー数は1〜100の範囲で指定してください"
+    presenterCount:
+      min: 0
+      max: 10
+      error: "出題者は最大10人までです"
+    statusTransitions:
+      - from: 準備中
+        to: 出題中
+        conditions:
+          - presenterCount >= 1
+          - allPresentersComplete = true
+      - from: 出題中
+        to: 締切
+        conditions: []
+
+  presenter:
+    episodeCount:
+      exact: 3
+      error: "エピソードは3つ登録する必要があります"
+    lieCount:
+      exact: 1
+      error: "ウソのエピソードを1つ選択してください"
+
+  episode:
+    textLength:
+      min: 1
+      max: 1000
+      error: "エピソードは1〜1000文字で入力してください"
+
+authorization:
+  game_creator:
+    description: Only the user who created the game
+    checks:
+      - game.creatorId === requesterId
+    operations:
+      - Update game settings
+      - Delete game
+      - Change game status
+      - Add/remove presenters
+      - View episodes with lie markers
+
+  presenter:
+    description: The presenter who owns the episodes
+    checks:
+      - presenter.nickname === requesterNickname
+    operations:
+      - Add/update/remove own episodes
+      - Mark lie in own episodes
+      - View own episodes with lie markers
+
+  public:
+    description: Any user (future feature)
+    operations:
+      - View games with status 出題中
+      - View episodes WITHOUT lie markers

@@ -4,10 +4,12 @@
 import type { Game } from '../entities/Game';
 import type { GameId } from '../value-objects/GameId';
 import type { GameStatus } from '../value-objects/GameStatus';
+import type { Presenter } from '../entities/Presenter';
+import type { Episode } from '../entities/Episode';
 
 /**
  * Game repository interface
- * Defines contract for game storage operations
+ * Defines contract for game storage operations including presenters and episodes
  */
 export interface IGameRepository {
   /**
@@ -22,6 +24,13 @@ export interface IGameRepository {
    * @returns Games with matching status
    */
   findByStatus(status: GameStatus): Promise<Game[]>;
+
+  /**
+   * Find games by creator ID
+   * @param creatorId Creator/moderator session ID
+   * @returns Games created by the specified user
+   */
+  findByCreatorId(creatorId: string): Promise<Game[]>;
 
   /**
    * Find single game by ID
@@ -47,4 +56,59 @@ export interface IGameRepository {
    * @param id Game ID to delete
    */
   delete(id: GameId): Promise<void>;
+
+  // Presenter operations
+
+  /**
+   * Find all presenters for a game
+   * @param gameId Game ID to find presenters for
+   * @returns All presenters for the game
+   */
+  findPresentersByGameId(gameId: string): Promise<Presenter[]>;
+
+  /**
+   * Find a single presenter by ID
+   * @param presenterId Presenter ID to search for
+   * @returns Presenter entity or null if not found
+   */
+  findPresenterById(presenterId: string): Promise<Presenter | null>;
+
+  /**
+   * Add a presenter to a game
+   * @param presenter Presenter entity to create
+   */
+  addPresenter(presenter: Presenter): Promise<void>;
+
+  /**
+   * Remove a presenter from a game (cascade deletes episodes)
+   * @param presenterId Presenter ID to delete
+   */
+  removePresenter(presenterId: string): Promise<void>;
+
+  // Episode operations
+
+  /**
+   * Find all episodes for a presenter
+   * @param presenterId Presenter ID to find episodes for
+   * @returns All episodes for the presenter
+   */
+  findEpisodesByPresenterId(presenterId: string): Promise<Episode[]>;
+
+  /**
+   * Add an episode to a presenter
+   * @param episode Episode entity to create
+   */
+  addEpisode(episode: Episode): Promise<void>;
+
+  /**
+   * Remove an episode
+   * @param episodeId Episode ID to delete
+   */
+  removeEpisode(episodeId: string): Promise<void>;
+
+  /**
+   * Update an episode
+   * @param episode Episode entity with updated data
+   */
+  updateEpisode(episode: Episode): Promise<void>;
 }

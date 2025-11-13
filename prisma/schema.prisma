@@ -1,0 +1,53 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Game Preparation Feature Models (002-game-preparation)
+
+model Game {
+  id             String      @id @default(uuid())
+  name           String?     // Game display name (optional, max 100 chars, defaults to UUID display)
+  creatorId      String      // Session ID of the moderator
+  maxPlayers     Int         // Maximum number of players (1-100)
+  currentPlayers Int         @default(0) // Current number of registered players
+  status         String      @default("準備中") // GameStatus: 準備中, 出題中, 締切
+  presenters     Presenter[] // 0-10 presenters
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  @@index([creatorId])
+  @@index([status])
+}
+
+model Presenter {
+  id        String    @id @default(uuid())
+  gameId    String    // Foreign key to Game
+  nickname  String    // Session nickname (FR-003)
+  episodes  Episode[] // Exactly 3 episodes required (FR-004)
+  createdAt DateTime  @default(now())
+
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@index([gameId])
+}
+
+model Episode {
+  id          String   @id @default(uuid())
+  presenterId String   // Foreign key to Presenter
+  text        String   // 1-1000 characters (Assumption 3, critical requirement)
+  isLie       Boolean  // Truth/lie marker - confidential (FR-006)
+  createdAt   DateTime @default(now())
+
+  presenter Presenter @relation(fields: [presenterId], references: [id], onDelete: Cascade)
+
+  @@index([presenterId])
+}

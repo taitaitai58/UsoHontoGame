@@ -1,0 +1,273 @@
+# Server Action Contracts: Presenter Management
+# Feature: 002-game-preparation
+# Technology: Next.js Server Actions
+# Validation: Zod schemas (see src/server/domain/schemas/gameSchemas.ts)
+#
+# All Server Actions validate input using Zod before executing use cases.
+# Error responses include structured validation errors from z.ZodError.flatten().
+
+actions:
+  addPresenter:
+    description: Add a presenter to a game (FR-003)
+    input:
+      type: object
+      required:
+        - gameId
+        - nickname
+      properties:
+        gameId:
+          type: string
+          format: uuid
+        nickname:
+          type: string
+          description: Session nickname of presenter to add
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        presenterId:
+          type: string
+          format: uuid
+          description: The created presenter's ID (only present on success)
+        error:
+          type: string
+    errors:
+      - ValidationError: Maximum 10 presenters per game
+      - InvalidStatusError: Cannot add presenters in 出題中 or 締切 status
+      - UnauthorizedError: Only creator can add presenters
+      - NotFoundError: Game not found or nickname not found
+    requirements:
+      - FR-003
+      - FR-014
+
+  removePresenter:
+    description: Remove a presenter and all their episodes from a game (FR-014)
+    input:
+      type: object
+      required:
+        - gameId
+        - presenterId
+      properties:
+        gameId:
+          type: string
+          format: uuid
+        presenterId:
+          type: string
+          format: uuid
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        error:
+          type: string
+    errors:
+      - InvalidStatusError: Cannot remove presenters in 出題中 or 締切 status
+      - UnauthorizedError: Only creator can remove presenters
+      - NotFoundError: Game or presenter not found
+    requirements:
+      - FR-014
+
+  addEpisode:
+    description: Add an episode for a presenter (FR-004)
+    input:
+      type: object
+      required:
+        - presenterId
+        - text
+        - isLie
+      properties:
+        presenterId:
+          type: string
+          format: uuid
+        text:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        isLie:
+          type: boolean
+          description: Whether this episode is the lie
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        episodeId:
+          type: string
+          format: uuid
+        error:
+          type: string
+    errors:
+      - ValidationError: Maximum 3 episodes per presenter, text must be 1-1000 chars
+      - ValidationError: Only one episode can be marked as lie
+      - InvalidStatusError: Cannot add episodes in 出題中 or 締切 status
+      - UnauthorizedError: Only presenter or game creator can add episodes
+      - NotFoundError: Presenter not found
+    requirements:
+      - FR-004
+      - FR-005
+      - FR-014
+
+  updateEpisode:
+    description: Update an existing episode
+    input:
+      type: object
+      required:
+        - episodeId
+      properties:
+        episodeId:
+          type: string
+          format: uuid
+        text:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        isLie:
+          type: boolean
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        error:
+          type: string
+    errors:
+      - ValidationError: Text must be 1-1000 chars
+      - ValidationError: Only one episode can be marked as lie
+      - InvalidStatusError: Cannot update episodes in 出題中 or 締切 status
+      - UnauthorizedError: Only presenter or game creator can update episodes
+      - NotFoundError: Episode not found
+    requirements:
+      - FR-005
+      - FR-014
+
+  removeEpisode:
+    description: Remove an episode from a presenter
+    input:
+      type: object
+      required:
+        - episodeId
+      properties:
+        episodeId:
+          type: string
+          format: uuid
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        error:
+          type: string
+    errors:
+      - InvalidStatusError: Cannot remove episodes in 出題中 or 締切 status
+      - UnauthorizedError: Only presenter or game creator can remove episodes
+      - NotFoundError: Episode not found
+    requirements:
+      - FR-014
+
+  markLie:
+    description: Mark exactly one episode as the lie for a presenter (FR-005, FR-019)
+    input:
+      type: object
+      required:
+        - presenterId
+        - episodeId
+      properties:
+        presenterId:
+          type: string
+          format: uuid
+        episodeId:
+          type: string
+          format: uuid
+          description: The episode to mark as the lie
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        error:
+          type: string
+    errors:
+      - ValidationError: Presenter must have exactly 3 episodes before marking lie
+      - InvalidStatusError: Cannot change lie marker in 出題中 or 締切 status
+      - UnauthorizedError: Only presenter or game creator can mark lie
+      - NotFoundError: Presenter or episode not found
+    requirements:
+      - FR-005
+      - FR-019
+
+  getPresenterEpisodes:
+    description: Get all episodes for a presenter with lie markers (FR-006)
+    input:
+      type: object
+      required:
+        - presenterId
+      properties:
+        presenterId:
+          type: string
+          format: uuid
+    output:
+      type: object
+      properties:
+        success:
+          type: boolean
+        presenter:
+          $ref: '#/components/schemas/PresenterWithLieDto'
+        error:
+          type: string
+    errors:
+      - UnauthorizedError: Only presenter or game creator can view lie markers
+      - NotFoundError: Presenter not found
+    requirements:
+      - FR-006
+
+components:
+  schemas:
+    PresenterWithLieDto:
+      type: object
+      description: Full presenter data with episodes including lie markers
+      properties:
+        id:
+          type: string
+          format: uuid
+        nickname:
+          type: string
+        episodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/EpisodeWithLieDto'
+          minItems: 0
+          maxItems: 3
+
+    EpisodeWithLieDto:
+      type: object
+      description: Episode with lie marker visible (confidential)
+      properties:
+        id:
+          type: string
+          format: uuid
+        text:
+          type: string
+          maxLength: 1000
+        isLie:
+          type: boolean
+          description: "⚠️ CONFIDENTIAL - Only visible to presenter and game creator"
+        createdAt:
+          type: string
+          format: date-time
+
+    EpisodeDto:
+      type: object
+      description: Public episode view without lie marker (for future player view)
+      properties:
+        id:
+          type: string
+          format: uuid
+        text:
+          type: string
+          maxLength: 1000
+        createdAt:
+          type: string
+          format: date-time
+      # Note: isLie field NEVER included in public view (FR-006)

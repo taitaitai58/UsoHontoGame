@@ -55,6 +55,77 @@ describe('GameStatus', () => {
     });
   });
 
+  describe('isPreparation', () => {
+    it('should return true for 準備中 status', () => {
+      const status = new GameStatus('準備中');
+      expect(status.isPreparation()).toBe(true);
+    });
+
+    it('should return false for 出題中 status', () => {
+      const status = new GameStatus('出題中');
+      expect(status.isPreparation()).toBe(false);
+    });
+
+    it('should return false for 締切 status', () => {
+      const status = new GameStatus('締切');
+      expect(status.isPreparation()).toBe(false);
+    });
+  });
+
+  describe('isClosed', () => {
+    it('should return false for 準備中 status', () => {
+      const status = new GameStatus('準備中');
+      expect(status.isClosed()).toBe(false);
+    });
+
+    it('should return false for 出題中 status', () => {
+      const status = new GameStatus('出題中');
+      expect(status.isClosed()).toBe(false);
+    });
+
+    it('should return true for 締切 status', () => {
+      const status = new GameStatus('締切');
+      expect(status.isClosed()).toBe(true);
+    });
+  });
+
+  describe('canEdit', () => {
+    it('should return true for 準備中 status (FR-014)', () => {
+      const status = new GameStatus('準備中');
+      expect(status.canEdit()).toBe(true);
+    });
+
+    it('should return false for 出題中 status (FR-014)', () => {
+      const status = new GameStatus('出題中');
+      expect(status.canEdit()).toBe(false);
+    });
+
+    it('should return false for 締切 status (FR-014)', () => {
+      const status = new GameStatus('締切');
+      expect(status.canEdit()).toBe(false);
+    });
+  });
+
+  describe('static factories', () => {
+    it('should create preparation status', () => {
+      const status = GameStatus.preparation();
+      expect(status.value).toBe('準備中');
+      expect(status.isPreparation()).toBe(true);
+    });
+
+    it('should create accepting responses status', () => {
+      const status = GameStatus.acceptingResponses();
+      expect(status.value).toBe('出題中');
+      expect(status.isAcceptingResponses()).toBe(true);
+    });
+
+    it('should create closed status', () => {
+      const status = GameStatus.closed();
+      expect(status.value).toBe('締切');
+      expect(status.isClosed()).toBe(true);
+    });
+  });
+
   describe('equals', () => {
     it('should return true for same status value', () => {
       const status1 = new GameStatus('出題中');

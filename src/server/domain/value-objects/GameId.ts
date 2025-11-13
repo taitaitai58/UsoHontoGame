@@ -63,4 +63,11 @@ export class GameId {
   toString(): string {
     return this._value;
   }
+
+  /**
+   * Static factory for generating new game IDs
+   */
+  static generate(): GameId {
+    return new GameId(crypto.randomUUID());
+  }
 }

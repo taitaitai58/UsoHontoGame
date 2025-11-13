@@ -5,6 +5,8 @@ import { Game } from '@/server/domain/entities/Game';
 import type { IGameRepository } from '@/server/domain/repositories/IGameRepository';
 import { GameId } from '@/server/domain/value-objects/GameId';
 import { GameStatus } from '@/server/domain/value-objects/GameStatus';
+import type { Presenter } from '@/server/domain/entities/Presenter';
+import type { Episode } from '@/server/domain/entities/Episode';
 
 /**
  * InMemoryGameRepository
@@ -14,9 +16,13 @@ import { GameStatus } from '@/server/domain/value-objects/GameStatus';
 export class InMemoryGameRepository implements IGameRepository {
   private static instance: InMemoryGameRepository;
   private games: Map<string, Game>;
+  private presenters: Map<string, Presenter>;
+  private episodes: Map<string, Episode>;
 
   private constructor() {
     this.games = new Map();
+    this.presenters = new Map();
+    this.episodes = new Map();
     // Initialize with some test data for development
     this.initializeTestData();
   }
@@ -44,6 +50,14 @@ export class InMemoryGameRepository implements IGameRepository {
    */
   async findByStatus(status: GameStatus): Promise<Game[]> {
     return Array.from(this.games.values()).filter((game) => game.status.equals(status));
+  }
+
+  /**
+   * Finds games by creator ID
+   * @param creatorId Creator/moderator session ID
+   */
+  async findByCreatorId(creatorId: string): Promise<Game[]> {
+    return Array.from(this.games.values()).filter((game) => game.creatorId === creatorId);
   }
 
   /**
@@ -76,6 +90,89 @@ export class InMemoryGameRepository implements IGameRepository {
    */
   async delete(id: GameId): Promise<void> {
     this.games.delete(id.value);
+  }
+
+  // Presenter operations
+
+  /**
+   * Finds all presenters for a game
+   * @param gameId Game ID to find presenters for
+   */
+  async findPresentersByGameId(gameId: string): Promise<Presenter[]> {
+    return Array.from(this.presenters.values()).filter((presenter) => presenter.gameId === gameId);
+  }
+
+  /**
+   * Finds a single presenter by ID
+   * @param presenterId Presenter ID to search for
+   */
+  async findPresenterById(presenterId: string): Promise<Presenter | null> {
+    return this.presenters.get(presenterId) ?? null;
+  }
+
+  /**
+   * Adds a presenter to a game
+   * @param presenter Presenter entity to create
+   */
+  async addPresenter(presenter: Presenter): Promise<void> {
+    this.presenters.set(presenter.id, presenter);
+  }
+
+  /**
+   * Removes a presenter from a game (cascade deletes episodes)
+   * @param presenterId Presenter ID to delete
+   */
+  async removePresenter(presenterId: string): Promise<void> {
+    // Remove all episodes for this presenter
+    const episodes = await this.findEpisodesByPresenterId(presenterId);
+    for (const episode of episodes) {
+      this.episodes.delete(episode.id);
+    }
+    // Remove presenter
+    this.presenters.delete(presenterId);
+  }
+
+  // Episode operations
+
+  /**
+   * Finds all episodes for a presenter
+   * @param presenterId Presenter ID to find episodes for
+   */
+  async findEpisodesByPresenterId(presenterId: string): Promise<Episode[]> {
+    return Array.from(this.episodes.values()).filter((episode) => episode.presenterId === presenterId);
+  }
+
+  /**
+   * Adds an episode to a presenter
+   * @param episode Episode entity to create
+   */
+  async addEpisode(episode: Episode): Promise<void> {
+    this.episodes.set(episode.id, episode);
+  }
+
+  /**
+   * Removes an episode
+   * @param episodeId Episode ID to delete
+   */
+  async removeEpisode(episodeId: string): Promise<void> {
+    this.episodes.delete(episodeId);
+  }
+
+  /**
+   * Updates an episode
+   * @param episode Episode entity with updated data
+   */
+  async updateEpisode(episode: Episode): Promise<void> {
+    this.episodes.set(episode.id, episode);
+  }
+
+  /**
+   * Clears all data (for testing)
+   */
+  clear(): void {
+    this.games.clear();
+    this.presenters.clear();
+    this.episodes.clear();
   }
 
   /**

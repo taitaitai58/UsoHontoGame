@@ -1,0 +1,1063 @@
+openapi: 3.0.0
+info:
+  title: Game Preparation Server Actions API
+  version: 1.0.0
+  description: |
+    Contract for Next.js Server Actions in the game preparation feature.
+    Server Actions are invoked from React components using 'use server' directive.
+    This contract defines the interface, validation rules, and error handling.
+
+    Base Path: src/app/actions/game.ts
+
+    Authentication: Session-based (Session ID from cookie)
+    Authorization: Creator-only for edit/delete operations
+
+servers:
+  - url: 'server-action://game'
+    description: Next.js Server Actions namespace
+
+tags:
+  - name: Game Management
+    description: CRUD operations for games
+  - name: Game Status
+    description: Status transition operations
+  - name: Presenter Management
+    description: Presenter operations within games
+  - name: Episode Management
+    description: Episode operations within presenters
+
+paths:
+  /createGame:
+    post:
+      operationId: createGame
+      summary: Create a new game
+      description: |
+        Creates a new game with optional name, player limit, and optionally presenters with episodes.
+
+        Business Rules:
+        - Assigns unique UUID automatically (FR-001)
+        - Initializes status as '準備中' (FR-008)
+        - Validates player limit 1-100 (FR-002, FR-017)
+        - Allows adding presenters during creation (FR-003a)
+
+        Success Criteria: SC-001 (completes in under 2 minutes)
+      tags:
+        - Game Management
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - playerLimit
+              properties:
+                name:
+                  type: string
+                  maxLength: 100
+                  description: Optional custom game name (FR-001a)
+                  example: "Team Building Session"
+                playerLimit:
+                  type: integer
+                  minimum: 1
+                  maximum: 100
+                  description: Maximum number of players allowed (FR-002)
+                  example: 10
+                presenters:
+                  type: array
+                  maxItems: 10
+                  description: Optional presenters to add during creation (FR-003a)
+                  items:
+                    $ref: '#/components/schemas/CreatePresenterInput'
+      responses:
+        '200':
+          description: Game created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - gameId
+                properties:
+                  success:
+                    type: boolean
+                    enum: [true]
+                  gameId:
+                    type: string
+                    format: uuid
+                    description: Unique identifier for the created game
+                    example: "550e8400-e29b-41d4-a716-446655440000"
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+              examples:
+                invalidPlayerLimit:
+                  value:
+                    success: false
+                    errors:
+                      playerLimit: ["プレイヤー数は1〜100の範囲で指定してください"]
+                nameTooLong:
+                  value:
+                    success: false
+                    errors:
+                      name: ["ゲーム名は100文字以下でなければなりません"]
+                tooManyPresenters:
+                  value:
+                    success: false
+                    errors:
+                      presenters: ["出題者は最大10人までです"]
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error: "セッションが見つかりません"
+
+  /updateGame:
+    post:
+      operationId: updateGame
+      summary: Update game details
+      description: |
+        Updates game properties when status is '準備中'.
+
+        Business Rules:
+        - Only creator can update (Assumption 11)
+        - Only editable in '準備中' status (FR-013, FR-014)
+        - Validates player limit if provided (FR-017)
+      tags:
+        - Game Management
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - gameId
+              properties:
+                gameId:
+                  type: string
+                  format: uuid
+                  description: ID of game to update
+                  example: "550e8400-e29b-41d4-a716-446655440000"
+                name:
+                  type: string
+                  maxLength: 100
+                  description: New game name (optional)
+                  example: "Updated Team Session"
+                playerLimit:
+                  type: integer
+                  minimum: 1
+                  maximum: 100
+                  description: New player limit (optional)
+                  example: 15
+      responses:
+        '200':
+          description: Game updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                properties:
+                  success:
+                    type: boolean
+                    enum: [true]
+        '400':
+          description: Validation or business rule error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notInPreparation:
+                  value:
+                    success: false
+                    error: "準備中のゲームのみ編集できます"
+                invalidPlayerLimit:
+                  value:
+                    success: false
+                    errors:
+                      playerLimit: ["プレイヤー数は1〜100の範囲で指定してください"]
+        '403':
+          description: Not authorized (not creator)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error: "このゲームを編集する権限がありません"
+        '404':
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error: "ゲームが見つかりません"
+
+  /deleteGame:
+    post:
+      operationId: deleteGame
+      summary: Delete a game
+      description: |
+        Permanently deletes a game and all related data (cascades to presenters and episodes).
+
+        Business Rules:
+        - Only creator can delete (Assumption 11)
+        - Shows confirmation for active games (FR-016)
+        - Hard delete with cascade (Assumption 10)
+      tags:
+        - Game Management
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - gameId
+              properties:
+                gameId:
+                  type: string
+                  format: uuid
+                  description: ID of game to delete
+                  example: "550e8400-e29b-41d4-a716-446655440000"
+                confirmed:
+                  type: boolean
+                  description: User confirmation for games with status '出題中' or '締切' (FR-016)
+                  example: true
+      responses:
+        '200':
+          description: Game deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                properties:
+                  success:
+                    type: boolean
+                    enum: [true]
+        '400':
+          description: Confirmation required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error: "アクティブなゲームを削除するには確認が必要です"
+                requiresConfirmation: true
+        '403':
+          description: Not authorized (not creator)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error: "このゲームを削除する権限がありません"
+        '404':
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error: "ゲームが見つかりません"
+
+  /listGames:
+    post:
+      operationId: listGames
+      summary: List all games for current moderator
+      description: |
+        Returns all games created by the current user (session ID).
+
+        Business Rules:
+        - Filters by creator (session ID)
+        - Orders by creation date (newest first)
+        - Includes presenter count but not episode details (FR-012)
+
+        Success Criteria: SC-004 (loads in under 1 second for 50 games)
+      tags:
+        - Game Management
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: ['準備中', '出題中', '締切']
+                  description: Optional filter by game status
+                  example: '準備中'
+      responses:
+        '200':
+          description: List of games
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - games
+                properties:
+                  success:
+                    type: boolean
+                    enum: [true]
+                  games:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GameDto'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error: "セッションが見つかりません"
+
+  /getGame:
+    post:
+      operationId: getGame
+      summary: Get detailed game information
+      description: |
+        Returns full game details including presenters and episodes.
+        Lie markers are included only for creator and respective presenters (FR-006).
+
+        Business Rules:
+        - Only creator can access full details
+        - Presenters see lie markers only for own episodes
+      tags:
+        - Game Management
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - gameId
+              properties:
+                gameId:
+                  type: string
+                  format: uuid
+                  description: ID of game to retrieve
+                  example: "550e8400-e29b-41d4-a716-446655440000"
+      responses:
+        '200':
+          description: Game details
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - game
+                properties:
+                  success:
+                    type: boolean
+                    enum: [true]
+                  game:
+                    $ref: '#/components/schemas/GameDetailDto'
+        '403':
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error: "このゲームにアクセスする権限がありません"
+        '404':
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error: "ゲームが見つかりません"
+
+  /changeGameStatus:
+    post:
+      operationId: changeGameStatus
+      summary: Change game status
+      description: |
+        Transitions game through status workflow: 準備中 → 出題中 → 締切
+
+        Business Rules:
+        - Only creator can change status
+        - Validates preconditions before transitioning (FR-011, FR-018, FR-019)
+        - Cannot reverse transitions
+
+        Success Criteria: SC-003 (reflects in TOP page within 2 seconds)
+      tags:
+        - Game Status
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - gameId
+                - newStatus
+              properties:
+                gameId:
+                  type: string
+                  format: uuid
+                  description: ID of game to update
+                  example: "550e8400-e29b-41d4-a716-446655440000"
+                newStatus:
+                  type: string
+                  enum: ['出題中', '締切']
+                  description: New status (cannot transition back to 準備中)
+                  example: '出題中'
+      responses:
+        '200':
+          description: Status changed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                properties:
+                  success:
+                    type: boolean
+                    enum: [true]
+        '400':
+          description: Invalid transition or validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                noPresenters:
+                  value:
+                    success: false
+                    error: "出題者が1人以上必要です"
+                incompleteEpisodes:
+                  value:
+                    success: false
+                    error: "すべての出題者がエピソードを3つ登録する必要があります"
+                noLieMarked:
+                  value:
+                    success: false
+                    error: "すべての出題者がウソのエピソードを1つ選択する必要があります"
+                invalidTransition:
+                  value:
+                    success: false
+                    error: "このステータスからは変更できません"
+        '403':
+          description: Not authorized (not creator)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error: "このゲームのステータスを変更する権限がありません"
+        '404':
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error: "ゲームが見つかりません"
+
+  /addPresenter:
+    post:
+      operationId: addPresenter
+      summary: Add a presenter to a game
+      description: |
+        Adds a presenter to a game in '準備中' status.
+
+        Business Rules:
+        - Only creator can add presenters
+        - Maximum 10 presenters per game (FR-003)
+        - Only allowed in '準備中' status (FR-014)
+        - Optionally can include episodes during creation
+      tags:
+        - Presenter Management
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - gameId
+                - nickname
+              properties:
+                gameId:
+                  type: string
+                  format: uuid
+                  description: ID of game to add presenter to
+                  example: "550e8400-e29b-41d4-a716-446655440000"
+                nickname:
+                  type: string
+                  minLength: 1
+                  maxLength: 50
+                  description: Presenter's nickname (Assumption 8)
+                  example: "田中太郎"
+                episodes:
+                  type: array
+                  maxItems: 3
+                  description: Optional episodes to add with presenter
+                  items:
+                    $ref: '#/components/schemas/CreateEpisodeInput'
+      responses:
+        '200':
+          description: Presenter added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - presenterId
+                properties:
+                  success:
+                    type: boolean
+                    enum: [true]
+                  presenterId:
+                    type: string
+                    format: uuid
+                    description: Unique identifier for the created presenter
+                    example: "660e8400-e29b-41d4-a716-446655440001"
+        '400':
+          description: Validation or business rule error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                maxPresenters:
+                  value:
+                    success: false
+                    error: "出題者は最大10人までです"
+                notInPreparation:
+                  value:
+                    success: false
+                    error: "準備中のゲームにのみ出題者を追加できます"
+                invalidNickname:
+                  value:
+                    success: false
+                    errors:
+                      nickname: ["ニックネームを入力してください"]
+        '403':
+          description: Not authorized (not creator)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error: "このゲームに出題者を追加する権限がありません"
+        '404':
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error: "ゲームが見つかりません"
+
+  /removePresenter:
+    post:
+      operationId: removePresenter
+      summary: Remove a presenter from a game
+      description: |
+        Removes a presenter and all their episodes from a game.
+
+        Business Rules:
+        - Only creator can remove presenters
+        - Only allowed in '準備中' status (FR-014)
+        - Cascades to delete all presenter's episodes
+      tags:
+        - Presenter Management
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - gameId
+                - presenterId
+              properties:
+                gameId:
+                  type: string
+                  format: uuid
+                  description: ID of game containing presenter
+                  example: "550e8400-e29b-41d4-a716-446655440000"
+                presenterId:
+                  type: string
+                  format: uuid
+                  description: ID of presenter to remove
+                  example: "660e8400-e29b-41d4-a716-446655440001"
+      responses:
+        '200':
+          description: Presenter removed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                properties:
+                  success:
+                    type: boolean
+                    enum: [true]
+        '400':
+          description: Business rule error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error: "準備中のゲームのみ出題者を削除できます"
+        '403':
+          description: Not authorized (not creator)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error: "このゲームから出題者を削除する権限がありません"
+        '404':
+          description: Game or presenter not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                gameNotFound:
+                  value:
+                    success: false
+                    error: "ゲームが見つかりません"
+                presenterNotFound:
+                  value:
+                    success: false
+                    error: "出題者が見つかりません"
+
+  /updatePresenterEpisodes:
+    post:
+      operationId: updatePresenterEpisodes
+      summary: Update episodes for a presenter
+      description: |
+        Adds, updates, or marks lie for presenter's episodes.
+
+        Business Rules:
+        - Only creator or the presenter can update episodes
+        - Only allowed in '準備中' status (FR-014)
+        - Must have exactly 3 episodes (FR-004)
+        - Exactly one episode must be marked as lie (FR-005)
+
+        Success Criteria: SC-002 (completes in under 3 minutes)
+      tags:
+        - Episode Management
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - presenterId
+                - episodes
+              properties:
+                presenterId:
+                  type: string
+                  format: uuid
+                  description: ID of presenter to update
+                  example: "660e8400-e29b-41d4-a716-446655440001"
+                episodes:
+                  type: array
+                  minItems: 3
+                  maxItems: 3
+                  description: All 3 episodes (FR-004)
+                  items:
+                    type: object
+                    required:
+                      - text
+                      - isLie
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        description: Episode ID if updating existing, omit if creating new
+                        example: "770e8400-e29b-41d4-a716-446655440002"
+                      text:
+                        type: string
+                        minLength: 1
+                        maxLength: 1000
+                        description: Episode content (Assumption 3)
+                        example: "私は昨年マラソン大会で完走しました"
+                      isLie:
+                        type: boolean
+                        description: True if this is the lie episode (exactly one must be true)
+                        example: false
+      responses:
+        '200':
+          description: Episodes updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                properties:
+                  success:
+                    type: boolean
+                    enum: [true]
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notThreeEpisodes:
+                  value:
+                    success: false
+                    error: "エピソードは3つ登録する必要があります"
+                notOneLie:
+                  value:
+                    success: false
+                    error: "ウソのエピソードを1つ選択してください"
+                textTooLong:
+                  value:
+                    success: false
+                    errors:
+                      episodes:
+                        - text: ["エピソードは1000文字以下でなければなりません"]
+                notInPreparation:
+                  value:
+                    success: false
+                    error: "準備中のゲームのみエピソードを編集できます"
+        '403':
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error: "このエピソードを編集する権限がありません"
+        '404':
+          description: Presenter not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error: "出題者が見つかりません"
+
+components:
+  schemas:
+    GameDto:
+      type: object
+      description: Public game information for list views
+      required:
+        - id
+        - name
+        - playerLimit
+        - status
+        - presenterCount
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique game identifier
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        name:
+          type: string
+          description: Game name (defaults to UUID if not provided)
+          example: "Team Building Session"
+        playerLimit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          description: Maximum players allowed
+          example: 10
+        status:
+          type: string
+          enum: ['準備中', '出題中', '締切']
+          description: Current game status
+          example: '準備中'
+        presenterCount:
+          type: integer
+          minimum: 0
+          maximum: 10
+          description: Number of presenters in game
+          example: 3
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp
+          example: "2025-11-10T10:30:00Z"
+
+    GameDetailDto:
+      allOf:
+        - $ref: '#/components/schemas/GameDto'
+        - type: object
+          required:
+            - presenters
+            - updatedAt
+          properties:
+            presenters:
+              type: array
+              description: Full presenter details with episodes
+              items:
+                $ref: '#/components/schemas/PresenterWithLieDto'
+            updatedAt:
+              type: string
+              format: date-time
+              description: ISO 8601 timestamp of last update
+              example: "2025-11-10T14:45:00Z"
+
+    PresenterDto:
+      type: object
+      description: Public presenter information (episodes WITHOUT lie markers)
+      required:
+        - id
+        - nickname
+        - episodes
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "660e8400-e29b-41d4-a716-446655440001"
+        nickname:
+          type: string
+          example: "田中太郎"
+        episodes:
+          type: array
+          minItems: 0
+          maxItems: 3
+          items:
+            $ref: '#/components/schemas/EpisodeDto'
+
+    PresenterWithLieDto:
+      type: object
+      description: Presenter information WITH lie markers (for creator and presenter only)
+      required:
+        - id
+        - nickname
+        - episodes
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "660e8400-e29b-41d4-a716-446655440001"
+        nickname:
+          type: string
+          example: "田中太郎"
+        episodes:
+          type: array
+          minItems: 0
+          maxItems: 3
+          items:
+            $ref: '#/components/schemas/EpisodeWithLieDto'
+
+    EpisodeDto:
+      type: object
+      description: Public episode information (NO lie marker)
+      required:
+        - id
+        - text
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "770e8400-e29b-41d4-a716-446655440002"
+        text:
+          type: string
+          minLength: 1
+          maxLength: 1000
+          example: "私は昨年マラソン大会で完走しました"
+
+    EpisodeWithLieDto:
+      allOf:
+        - $ref: '#/components/schemas/EpisodeDto'
+        - type: object
+          required:
+            - isLie
+          properties:
+            isLie:
+              type: boolean
+              description: '⚠️ CONFIDENTIAL - True if this is the lie episode (FR-006)'
+              example: false
+
+    CreatePresenterInput:
+      type: object
+      description: Input for adding presenter during game creation
+      required:
+        - nickname
+      properties:
+        nickname:
+          type: string
+          minLength: 1
+          maxLength: 50
+          example: "田中太郎"
+        episodes:
+          type: array
+          maxItems: 3
+          items:
+            $ref: '#/components/schemas/CreateEpisodeInput'
+
+    CreateEpisodeInput:
+      type: object
+      description: Input for creating episode
+      required:
+        - text
+        - isLie
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 1000
+          example: "私は昨年マラソン大会で完走しました"
+        isLie:
+          type: boolean
+          example: false
+
+    ValidationError:
+      type: object
+      description: Zod validation error response
+      required:
+        - success
+        - errors
+      properties:
+        success:
+          type: boolean
+          enum: [false]
+        errors:
+          type: object
+          description: Field-level validation errors from Zod
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          example:
+            playerLimit: ["プレイヤー数は1〜100の範囲で指定してください"]
+            name: ["ゲーム名は100文字以下でなければなりません"]
+
+    ErrorResponse:
+      type: object
+      description: Generic error response
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          enum: [false]
+        error:
+          type: string
+          description: Human-readable error message in Japanese
+          example: "ゲームが見つかりません"
+        requiresConfirmation:
+          type: boolean
+          description: Present when user confirmation is needed
+          example: true
+
+  securitySchemes:
+    SessionCookie:
+      type: apiKey
+      in: cookie
+      name: session
+      description: Session-based authentication using cookie from 001-session-top-page
+
+security:
+  - SessionCookie: []
+
+x-business-rules:
+  game-creation:
+    - FR-001: System assigns unique UUID automatically
+    - FR-001a: Custom game name is optional
+    - FR-001b: Name defaults to UUID if not provided
+    - FR-002: Player limit must be 1-100
+    - FR-003: Maximum 10 presenters per game
+    - FR-003a: Can add presenters during game creation
+    - FR-008: New games initialize as '準備中'
+
+  game-status:
+    - FR-007: Three statuses - '準備中', '出題中', '締切'
+    - FR-009: Can transition '準備中' → '出題中'
+    - FR-010: Can transition '出題中' → '締切'
+    - FR-011: Must have 1+ presenter with complete episodes to transition to '出題中'
+    - FR-018: Each presenter must have exactly 3 episodes
+    - FR-019: Each presenter must mark exactly 1 lie
+
+  game-editing:
+    - FR-013: Only editable in '準備中' status
+    - FR-014: Cannot edit presenters in '出題中' or '締切'
+    - FR-015: Creator can delete games
+    - FR-016: Confirmation required for active game deletion
+
+  confidentiality:
+    - FR-006: Lie markers only visible to creator and presenter
+    - Use EpisodeDto for public APIs
+    - Use EpisodeWithLieDto for creator/presenter APIs
+
+  authorization:
+    - Assumption 11: Only creator can edit/delete games
+    - Assumption 8: Presenters identified by session nickname
+
+x-validation-rules:
+  playerLimit: '1 ≤ value ≤ 100'
+  gameName: 'max 100 characters, optional'
+  presenterCount: '0 ≤ count ≤ 10'
+  episodeCount: 'exactly 3 per presenter'
+  episodeText: '1 ≤ length ≤ 1000 characters'
+  lieMarkerCount: 'exactly 1 per presenter'
+
+x-error-codes:
+  GAME_001: 'ゲームが見つかりません'
+  GAME_002: 'このゲームにアクセスする権限がありません'
+  GAME_003: '準備中のゲームのみ編集できます'
+  GAME_004: 'アクティブなゲームを削除するには確認が必要です'
+  PRESENTER_001: '出題者は最大10人までです'
+  PRESENTER_002: '出題者が1人以上必要です'
+  PRESENTER_003: '準備中のゲームにのみ出題者を追加できます'
+  EPISODE_001: 'エピソードは3つ登録する必要があります'
+  EPISODE_002: 'ウソのエピソードを1つ選択してください'
+  EPISODE_003: 'エピソードは1000文字以下でなければなりません'
+  SESSION_001: 'セッションが見つかりません'
+
+x-success-criteria:
+  SC-001: 'Game creation completes in under 2 minutes'
+  SC-002: 'Episode registration completes in under 3 minutes'
+  SC-003: 'Status changes reflect in TOP page within 2 seconds'
+  SC-004: 'Game list loads in under 1 second (up to 50 games)'
+  SC-005: '95% of moderators create first game without errors'
+  SC-006: 'Zero incidents of lie marker exposure'
+  SC-007: 'Game creation completion rate above 90%'

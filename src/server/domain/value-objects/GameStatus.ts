@@ -57,12 +57,57 @@ export class GameStatus {
   }
 
   /**
+   * Checks if game is in preparation
+   * @returns true if status is '準備中'
+   */
+  isPreparation(): boolean {
+    return this._value === '準備中';
+  }
+
+  /**
+   * Checks if game is closed
+   * @returns true if status is '締切'
+   */
+  isClosed(): boolean {
+    return this._value === '締切';
+  }
+
+  /**
+   * Checks if game can be edited (FR-014)
+   * @returns true if status is '準備中'
+   */
+  canEdit(): boolean {
+    return this._value === '準備中';
+  }
+
+  /**
    * Checks equality with another GameStatus
    * @param other The GameStatus to compare with
    * @returns true if values are equal
    */
   equals(other: GameStatus): boolean {
     return this._value === other._value;
+  }
+
+  /**
+   * Static factory for preparation status
+   */
+  static preparation(): GameStatus {
+    return new GameStatus('準備中');
+  }
+
+  /**
+   * Static factory for accepting responses status
+   */
+  static acceptingResponses(): GameStatus {
+    return new GameStatus('出題中');
+  }
+
+  /**
+   * Static factory for closed status
+   */
+  static closed(): GameStatus {
+    return new GameStatus('締切');
   }
 
   /**

@@ -1,0 +1,888 @@
+openapi: 3.0.0
+info:
+  title: Game Preparation Domain Schemas
+  version: 1.0.0
+  description: |
+    Domain entity schemas, value objects, and DTOs for the game preparation feature.
+
+    This contract defines:
+    - Core domain entities (Game, Presenter, Episode)
+    - Value objects (GameId, GameStatus)
+    - Data Transfer Objects (DTOs) for API boundaries
+    - Validation rules and invariants
+    - Security classifications (confidential fields)
+
+    Architecture: Clean Architecture / DDD
+    Implementation: TypeScript with Zod validation
+
+components:
+  schemas:
+    # ==================
+    # DOMAIN ENTITIES
+    # ==================
+
+    Game:
+      type: object
+      description: |
+        Aggregate root representing a truth-or-lie game session.
+
+        Business Rules:
+        - FR-001: Unique UUID assigned on creation
+        - FR-001a: Custom name is optional
+        - FR-001b: Name defaults to UUID if not provided
+        - FR-002: Player limit 1-100
+        - FR-003: Maximum 10 presenters
+        - FR-007: Three statuses (–™-, úL-, à)
+        - FR-008: Initializes as '–™-'
+
+        Invariants:
+        - playerLimit between 1 and 100
+        - presenters.length between 0 and 10
+        - Cannot transition to 'úL-' without valid presenters
+      required:
+        - id
+        - name
+        - creatorId
+        - playerLimit
+        - status
+        - presenters
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          $ref: '#/components/schemas/GameId'
+        name:
+          type: string
+          maxLength: 100
+          description: Custom game name or UUID fallback (FR-001a, FR-001b)
+          example: "Team Building Session"
+        creatorId:
+          type: string
+          description: Session ID of moderator who created the game
+          example: "session_abc123"
+        playerLimit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          description: Maximum players allowed (FR-002, FR-017)
+          example: 10
+        status:
+          $ref: '#/components/schemas/GameStatus'
+        presenters:
+          type: array
+          minItems: 0
+          maxItems: 10
+          description: Collection of presenters (FR-003)
+          items:
+            $ref: '#/components/schemas/Presenter'
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when game was created
+          example: "2025-11-10T10:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: Timestamp when game was last modified
+          example: "2025-11-10T14:45:00Z"
+      x-methods:
+        - name: startAccepting
+          description: Transition from '–™-' to 'úL-' (FR-009)
+          preconditions:
+            - presenters.length >= 1
+            - All presenters have exactly 3 episodes
+            - All presenters have exactly 1 lie marked
+          throws:
+            - InvalidTransitionError
+        - name: close
+          description: Transition from 'úL-' to 'à' (FR-010)
+          preconditions: []
+          throws:
+            - InvalidTransitionError
+        - name: addPresenter
+          description: Add a presenter to the game (FR-003)
+          preconditions:
+            - status === '–™-'
+            - presenters.length < 10
+          throws:
+            - MaxPresentersExceededError
+            - InvalidStatusError
+        - name: removePresenter
+          description: Remove a presenter from the game (FR-014)
+          preconditions:
+            - status === '–™-'
+          throws:
+            - InvalidStatusError
+        - name: updatePlayerLimit
+          description: Change player limit when in '–™-' (FR-013)
+          preconditions:
+            - status === '–™-'
+          throws:
+            - InvalidStatusError
+        - name: canStartAccepting
+          description: Validate if game can transition to 'úL-' (FR-011)
+          returns: boolean
+
+    Presenter:
+      type: object
+      description: |
+        Entity representing a participant who creates episodes.
+
+        Business Rules:
+        - FR-004: Must register exactly 3 episodes
+        - FR-005: Exactly one episode must be marked as lie
+        - FR-014: Cannot modify episodes when game is not '–™-'
+
+        Invariants:
+        - episodes.length must be 3 for complete presenter
+        - Exactly one episode.isLie === true
+      required:
+        - id
+        - gameId
+        - nickname
+        - episodes
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: System-generated unique identifier
+          example: "660e8400-e29b-41d4-a716-446655440001"
+        gameId:
+          type: string
+          format: uuid
+          description: Reference to parent Game
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        nickname:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: Session nickname of presenter (Assumption 7)
+          example: "0-*Î"
+        episodes:
+          type: array
+          minItems: 0
+          maxItems: 3
+          description: Collection of presenter's episodes (FR-004)
+          items:
+            $ref: '#/components/schemas/Episode'
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when presenter was added
+          example: "2025-11-10T10:35:00Z"
+      x-methods:
+        - name: addEpisode
+          description: Add an episode (max 3)
+          preconditions:
+            - episodes.length < 3
+          throws:
+            - MaxEpisodesExceededError
+        - name: removeEpisode
+          description: Remove an episode
+          preconditions:
+            - episodes.length > 0
+          throws:
+            - EpisodeNotFoundError
+        - name: markLie
+          description: Mark exactly one episode as the lie (FR-005)
+          preconditions:
+            - episodes.length > 0
+          throws:
+            - EpisodeNotFoundError
+          postconditions:
+            - Exactly one episode has isLie === true
+        - name: hasCompleteEpisodes
+          description: Check if presenter has 3 episodes with lie marked
+          returns: boolean
+
+    Episode:
+      type: object
+      description: |
+        Entity representing a story or statement with truth/lie marker.
+
+        Business Rules:
+        - FR-006: isLie marker is confidential (only visible to creator and presenter)
+        - Assumption 3: Text max length 1000 characters
+
+        Invariants:
+        - text cannot be empty
+        - text max 1000 characters
+
+        Security:
+        - isLie must never be exposed in public APIs
+        - Use EpisodeDto for public access
+        - Use EpisodeWithLieDto for creator/presenter access
+      required:
+        - id
+        - presenterId
+        - text
+        - isLie
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: System-generated unique identifier
+          example: "770e8400-e29b-41d4-a716-446655440002"
+        presenterId:
+          type: string
+          format: uuid
+          description: Reference to parent Presenter
+          example: "660e8400-e29b-41d4-a716-446655440001"
+        text:
+          type: string
+          minLength: 1
+          maxLength: 1000
+          description: Episode content (Assumption 3)
+          example: "Áo(tŞé½ó'gŒpW~W_"
+        isLie:
+          type: boolean
+          description: '  CONFIDENTIAL - Truth/lie marker (FR-006)'
+          example: false
+          x-confidential: true
+          x-access-control:
+            - game.creatorId (moderator)
+            - episode.presenter.nickname (presenter themselves)
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when episode was created
+          example: "2025-11-10T10:40:00Z"
+
+    # ==================
+    # VALUE OBJECTS
+    # ==================
+
+    GameId:
+      type: string
+      format: uuid
+      description: |
+        Value object for Game unique identifier using UUID v4.
+
+        Business Rules:
+        - FR-001: System-generated unique UUID
+
+        Implementation:
+        ```typescript
+        class GameId {
+          private readonly _value: string;
+
+          constructor(value: string) {
+            if (!this.isValidUUID(value)) {
+              throw new InvalidGameIdError();
+            }
+            this._value = value;
+          }
+
+          get value(): string { return this._value; }
+          equals(other: GameId): boolean { return this._value === other._value; }
+          static generate(): GameId { return new GameId(crypto.randomUUID()); }
+        }
+        ```
+      example: "550e8400-e29b-41d4-a716-446655440000"
+      pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+
+    GameStatus:
+      type: string
+      enum:
+        - '–™-'
+        - 'úL-'
+        - 'à'
+      description: |
+        Value object representing game state with business logic.
+
+        Valid States:
+        - –™- (Preparation): Game being set up (FR-008)
+        - úL- (Accepting Responses): Game live for players (FR-009)
+        - à (Closed): Game has ended (FR-010)
+
+        State Transitions:
+        - –™- ’ úL- (via startAccepting)
+        - úL- ’ à (via close)
+        - No reverse transitions allowed
+
+        Implementation:
+        ```typescript
+        class GameStatus {
+          private readonly _value: '–™-' | 'úL-' | 'à';
+
+          constructor(value: '–™-' | 'úL-' | 'à') {
+            this._value = value;
+          }
+
+          get value(): string { return this._value; }
+          isAcceptingResponses(): boolean { return this._value === 'úL-'; }
+          canEdit(): boolean { return this._value === '–™-'; }
+          equals(other: GameStatus): boolean { return this._value === other._value; }
+        }
+        ```
+      example: '–™-'
+
+    # ==================
+    # DATA TRANSFER OBJECTS (DTOs)
+    # ==================
+
+    GameDto:
+      type: object
+      description: |
+        Public game information for list views and non-authenticated access.
+
+        Usage:
+        - Game list page (FR-012)
+        - TOP page display (for 'úL-' games)
+        - Player views
+
+        Security:
+        - No confidential information included
+        - Safe for public APIs
+      required:
+        - id
+        - name
+        - playerLimit
+        - status
+        - presenterCount
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique game identifier
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        name:
+          type: string
+          description: Game name (defaults to UUID if not provided)
+          example: "Team Building Session"
+        playerLimit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          description: Maximum players allowed
+          example: 10
+        status:
+          type: string
+          enum: ['–™-', 'úL-', 'à']
+          description: Current game status
+          example: '–™-'
+        presenterCount:
+          type: integer
+          minimum: 0
+          maximum: 10
+          description: Number of presenters (no episode details)
+          example: 3
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp
+          example: "2025-11-10T10:30:00Z"
+
+    GameDetailDto:
+      type: object
+      description: |
+        Detailed game information for moderator (creator) access.
+
+        Usage:
+        - Game edit page
+        - Game detail view
+        - Moderator dashboard
+
+        Security:
+        - Includes presenter details with lie markers (FR-006)
+        - Only accessible by game creator
+      required:
+        - id
+        - name
+        - playerLimit
+        - status
+        - presenterCount
+        - presenters
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        name:
+          type: string
+          example: "Team Building Session"
+        playerLimit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          example: 10
+        status:
+          type: string
+          enum: ['–™-', 'úL-', 'à']
+          example: '–™-'
+        presenterCount:
+          type: integer
+          minimum: 0
+          maximum: 10
+          example: 3
+        presenters:
+          type: array
+          description: Full presenter details WITH lie markers
+          items:
+            $ref: '#/components/schemas/PresenterWithLieDto'
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-11-10T10:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last modification timestamp
+          example: "2025-11-10T14:45:00Z"
+
+    PresenterDto:
+      type: object
+      description: |
+        Public presenter information WITHOUT lie markers.
+
+        Usage:
+        - Player views during game
+        - Public APIs
+        - Non-authenticated access
+
+        Security:
+        - Episodes do NOT include isLie field (FR-006)
+        - Safe for public display
+      required:
+        - id
+        - nickname
+        - episodes
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "660e8400-e29b-41d4-a716-446655440001"
+        nickname:
+          type: string
+          example: "0-*Î"
+        episodes:
+          type: array
+          minItems: 0
+          maxItems: 3
+          description: Episodes WITHOUT lie markers
+          items:
+            $ref: '#/components/schemas/EpisodeDto'
+
+    PresenterWithLieDto:
+      type: object
+      description: |
+        Presenter information WITH lie markers for authorized access.
+
+        Usage:
+        - Moderator (creator) views
+        - Presenter's own episode management
+        - Game edit interfaces
+
+        Security:
+        - Includes confidential isLie field (FR-006)
+        - Only accessible by game creator and presenter themselves
+      required:
+        - id
+        - nickname
+        - episodes
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "660e8400-e29b-41d4-a716-446655440001"
+        nickname:
+          type: string
+          example: "0-*Î"
+        episodes:
+          type: array
+          minItems: 0
+          maxItems: 3
+          description: Episodes WITH lie markers
+          items:
+            $ref: '#/components/schemas/EpisodeWithLieDto'
+
+    EpisodeDto:
+      type: object
+      description: |
+        Public episode information WITHOUT lie marker.
+
+        Usage:
+        - Player views during game
+        - Public APIs
+        - Non-authenticated access
+
+        Security:
+        - NO isLie field (FR-006)
+        - Safe for public display
+        - SC-006: Zero incidents of lie marker exposure
+      required:
+        - id
+        - text
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "770e8400-e29b-41d4-a716-446655440002"
+        text:
+          type: string
+          minLength: 1
+          maxLength: 1000
+          example: "Áo(tŞé½ó'gŒpW~W_"
+
+    EpisodeWithLieDto:
+      type: object
+      description: |
+        Episode information WITH lie marker for authorized access.
+
+        Usage:
+        - Moderator (creator) views
+        - Presenter's own episode management
+        - Game edit interfaces
+
+        Security:
+        - Includes confidential isLie field (FR-006)
+        - Only accessible by game creator and presenter themselves
+        - Must never be sent to players or public APIs
+      required:
+        - id
+        - text
+        - isLie
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "770e8400-e29b-41d4-a716-446655440002"
+        text:
+          type: string
+          minLength: 1
+          maxLength: 1000
+          example: "Áo(tŞé½ó'gŒpW~W_"
+        isLie:
+          type: boolean
+          description: '  CONFIDENTIAL - True if this is the lie episode (FR-006)'
+          example: false
+          x-confidential: true
+
+    # ==================
+    # VALIDATION SCHEMAS (ZOD)
+    # ==================
+
+    CreateGameInput:
+      type: object
+      description: |
+        Zod validation schema for game creation.
+
+        Maps to: CreateGameSchema in gameSchemas.ts
+      required:
+        - playerLimit
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          description: Optional custom game name (FR-001a)
+        playerLimit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          description: Required player limit (FR-002, FR-017)
+        presenters:
+          type: array
+          maxItems: 10
+          description: Optional presenters to add during creation (FR-003a)
+          items:
+            $ref: '#/components/schemas/CreatePresenterInput'
+      x-validation-errors:
+        name.maxLength: '²üào100‡WågjQŒpjŠ~[“'
+        playerLimit.required: '×ì¤äüp’e›WfO`UD'
+        playerLimit.min: '×ì¤äüpo1å
+gjQŒpjŠ~[“'
+        playerLimit.max: '×ì¤äüpo100ågjQŒpjŠ~[“'
+        presenters.maxItems: 'úLo '10º~ggY'
+
+    UpdateGameInput:
+      type: object
+      description: |
+        Zod validation schema for game updates.
+
+        Maps to: UpdateGameSchema in gameSchemas.ts
+      required:
+        - gameId
+      properties:
+        gameId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 100
+        playerLimit:
+          type: integer
+          minimum: 1
+          maximum: 100
+      x-validation-errors:
+        gameId.uuid: '²üàIDo	¹jUUIDgjQŒpjŠ~[“'
+        name.maxLength: '²üào100‡WågjQŒpjŠ~[“'
+        playerLimit.min: '×ì¤äüpo1å
+gjQŒpjŠ~[“'
+        playerLimit.max: '×ì¤äüpo100ågjQŒpjŠ~[“'
+
+    CreatePresenterInput:
+      type: object
+      description: |
+        Zod validation schema for presenter creation.
+
+        Maps to: AddPresenterSchema in gameSchemas.ts
+      required:
+        - nickname
+      properties:
+        nickname:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: Presenter's session nickname (Assumption 8)
+        episodes:
+          type: array
+          maxItems: 3
+          items:
+            $ref: '#/components/schemas/CreateEpisodeInput'
+      x-validation-errors:
+        nickname.required: 'ËÃ¯Íüà’e›WfO`UD'
+        nickname.minLength: 'ËÃ¯Íüà’e›WfO`UD'
+        nickname.maxLength: 'ËÃ¯Íüào50‡WågjQŒpjŠ~[“'
+        episodes.maxItems: '¨Ô½üÉo '3d~ggY'
+
+    CreateEpisodeInput:
+      type: object
+      description: |
+        Zod validation schema for episode creation.
+
+        Maps to: AddEpisodeSchema in gameSchemas.ts
+      required:
+        - text
+        - isLie
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        isLie:
+          type: boolean
+      x-validation-errors:
+        text.required: '¨Ô½üÉ’e›WfO`UD'
+        text.minLength: '¨Ô½üÉo1‡Wå
+gjQŒpjŠ~[“'
+        text.maxLength: '¨Ô½üÉo1000‡WågjQŒpjŠ~[“'
+        isLie.required: '¦½Şü«ü’šWfO`UD'
+
+    UpdateEpisodeInput:
+      type: object
+      description: |
+        Zod validation schema for episode updates.
+
+        Maps to: UpdateEpisodeSchema in gameSchemas.ts
+      required:
+        - episodeId
+      properties:
+        episodeId:
+          type: string
+          format: uuid
+        text:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        isLie:
+          type: boolean
+      x-validation:
+        custom: 'At least one of text or isLie must be provided'
+      x-validation-errors:
+        episodeId.uuid: '¨Ô½üÉIDo	¹jUUIDgjQŒpjŠ~[“'
+        text.minLength: '¨Ô½üÉo1‡Wå
+gjQŒpjŠ~[“'
+        text.maxLength: '¨Ô½üÉo1000‡WågjQŒpjŠ~[“'
+        custom: 'Æ­¹È~_o¦½Şü«ünDZŒK’ô°Y‹ÅLBŠ~Y'
+
+    CompletePresenterValidation:
+      type: object
+      description: |
+        Complex validation for presenter completeness.
+
+        Maps to: CompletePresenterSchema in validators.ts
+
+        Validates:
+        - FR-004: Exactly 3 episodes
+        - FR-005: Exactly 1 lie marked
+        - FR-018: Required before status transition
+        - FR-019: Required before status transition
+      required:
+        - episodes
+      properties:
+        episodes:
+          type: array
+          minItems: 3
+          maxItems: 3
+          items:
+            type: object
+            required:
+              - isLie
+            properties:
+              isLie:
+                type: boolean
+      x-validation:
+        episodeCount: 'episodes.length === 3'
+        lieCount: 'episodes.filter(e => e.isLie).length === 1'
+      x-validation-errors:
+        episodeCount: '¨Ô½üÉo3d{2Y‹ÅLBŠ~Y'
+        lieCount: '¦½n¨Ô½üÉ’1dxWfO`UD'
+
+    ReadyToAcceptValidation:
+      type: object
+      description: |
+        Complex validation for game readiness to accept responses.
+
+        Maps to: ReadyToAcceptSchema in validators.ts
+
+        Validates:
+        - FR-011: At least 1 presenter
+        - All presenters pass CompletePresenterValidation
+      required:
+        - presenters
+      properties:
+        presenters:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/CompletePresenterValidation'
+      x-validation-errors:
+        presenterCount: 'úLL1ºå
+ÅgY'
+
+x-entity-relationships: |
+  Game (1)       < (N) Presenter (1)       < (3) Episode
+                                                 
+     id                   gameId                  presenterId
+     name (optional)      nickname                text
+     creatorId            episodes[]              isLie   CONFIDENTIAL
+     playerLimit          createdAt               createdAt
+     status                                      
+     presenters[]                                
+     createdAt                                   
+     updatedAt                                   
+
+x-cascade-rules:
+  game-deletion:
+    description: Deleting Game cascades to all Presenters and Episodes (FR-015)
+    implementation: Prisma `onDelete: Cascade`
+  presenter-deletion:
+    description: Deleting Presenter cascades to all Episodes (FR-014)
+    implementation: Prisma `onDelete: Cascade`
+
+x-state-machine:
+  game-status:
+    states:
+      - name: '–™-'
+        description: Initial state - game being set up (FR-008)
+        transitions:
+          - to: 'úL-'
+            method: startAccepting()
+            conditions:
+              - presenters.length >= 1
+              - All presenters have 3 episodes
+              - All presenters have 1 lie marked
+      - name: 'úL-'
+        description: Game visible on TOP page, accepting player responses (FR-009)
+        transitions:
+          - to: 'à'
+            method: close()
+            conditions: []
+      - name: 'à'
+        description: Final state - game closed, no further transitions (FR-010)
+        transitions: []
+
+x-access-control:
+  creator-only-operations:
+    - Edit game (FR-013, FR-014)
+    - Delete game (FR-015)
+    - Change game status (FR-009, FR-010)
+    - Add/remove presenters (FR-003)
+    - View all lie markers (FR-006)
+  presenter-access:
+    - View own episodes with lie marker
+    - Add/edit own episodes (when status is '–™-')
+    - Mark lie in own episodes
+  public-access:
+    - View games with status 'úL-'
+    - View episodes WITHOUT lie marker (FR-006)
+
+x-validation-summary:
+  entity-level:
+    game:
+      - playerLimit: '1 d value d 100'
+      - presenters: '0 d length d 10'
+      - name: 'max 100 chars, optional'
+    presenter:
+      - episodes: 'length === 3'
+      - lieMarker: 'exactly 1 true'
+    episode:
+      - text: '1 d length d 1000'
+  transition-rules:
+    startAccepting:
+      - presenters.length >= 1
+      - All presenters.episodes.length === 3
+      - All presenters have exactly 1 lie marked
+  error-messages:
+    - playerLimit: '×ì¤äüpo1100nÄògšWfO`UD'
+    - presenters: 'úLo '10º~ggY'
+    - episodes: '¨Ô½üÉo3d{2Y‹ÅLBŠ~Y'
+    - lieMarker: '¦½n¨Ô½üÉ’1dxWfO`UD'
+    - text: '¨Ô½üÉo11000‡Wge›WfO`UD'
+
+x-performance-considerations:
+  database-indexes:
+    - '(creatorId, status)': Fast filtering of moderator's games by status (FR-012)
+    - '(creatorId, createdAt)': Fast chronological listing
+    - '(gameId)': Fast presenter lookup
+    - '(presenterId)': Fast episode lookup
+  query-patterns:
+    game-list-page:
+      method: 'findByCreator()'
+      eager-load: 'presenters (count only)'
+      performance: SC-004 (< 1 second for 50 games)
+    game-edit-page:
+      method: 'findById()'
+      eager-load: 'presenters with episodes'
+    top-page:
+      method: 'findByStatus("úL-")'
+      eager-load: 'limited fields, no episodes'
+  data-volume-estimates:
+    per-moderator:
+      games: 50
+      presenters: 500 (10 per game)
+      episodes: 1500 (3 per presenter)
+      total-rows: ~2000
+
+x-security-classification:
+  confidential-fields:
+    - Episode.isLie:
+        access:
+          - game.creatorId (moderator)
+          - episode.presenter.nickname (presenter themselves)
+        protection:
+          - Never include in EpisodeDto
+          - Only include in EpisodeWithLieDto
+          - Verify access control before sending
+        success-criteria: SC-006 (zero incidents of exposure)
+
+x-implementation-notes:
+  architecture: Clean Architecture / Domain-Driven Design
+  validation: Zod schemas at API boundaries
+  type-safety: TypeScript with strict mode
+  persistence: Prisma ORM with SQLite
+  error-handling: Structured error responses with Japanese messages
+  testing: Unit tests for domain logic, integration tests for use cases
+
+x-related-features:
+  dependencies:
+    - 001-session-top-page: Session management and TOP page display
+  future-features:
+    - Player participation and response submission
+    - Voting and scoring mechanisms
+    - Game analytics and statistics
