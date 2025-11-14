@@ -1,0 +1,216 @@
+openapi: 3.0.0
+info:
+  title: Presenter with Episodes API
+  version: 1.0.0
+  description: API contract for inline episode registration with presenters
+
+paths:
+  /api/presenters/with-episodes:
+    post:
+      summary: Create presenter with episodes
+      description: Creates a new presenter with exactly 3 episodes in a single atomic operation
+      operationId: addPresenterWithEpisodes
+      tags:
+        - Presenters
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddPresenterWithEpisodesRequest'
+            examples:
+              valid:
+                value:
+                  gameId: "game-123"
+                  nickname: "田中太郎"
+                  episodes:
+                    - text: "高校で野球部だった"
+                      isLie: false
+                    - text: "猫を3匹飼っている"
+                      isLie: false
+                    - text: "フランス留学経験がある"
+                      isLie: true
+      responses:
+        '201':
+          description: Presenter and episodes created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddPresenterWithEpisodesResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+              examples:
+                tooManyLies:
+                  value:
+                    success: false
+                    errors:
+                      episodes: ["ウソのエピソードは1つだけ選択してください"]
+                missingEpisodes:
+                  value:
+                    success: false
+                    errors:
+                      episodes: ["3つのエピソードが必要です"]
+        '401':
+          description: Unauthorized - session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthError'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+
+components:
+  schemas:
+    AddPresenterWithEpisodesRequest:
+      type: object
+      required:
+        - gameId
+        - nickname
+        - episodes
+      properties:
+        gameId:
+          type: string
+          minLength: 1
+          description: ID of the game to add presenter to
+        nickname:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: Presenter's nickname
+        episodes:
+          type: array
+          minItems: 3
+          maxItems: 3
+          description: Exactly 3 episodes (2 truths, 1 lie)
+          items:
+            type: object
+            required:
+              - text
+              - isLie
+            properties:
+              text:
+                type: string
+                minLength: 1
+                maxLength: 1000
+                description: Episode content
+              isLie:
+                type: boolean
+                description: Whether this episode is the lie
+
+    AddPresenterWithEpisodesResponse:
+      type: object
+      required:
+        - success
+        - presenter
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+        presenter:
+          $ref: '#/components/schemas/PresenterWithEpisodes'
+
+    PresenterWithEpisodes:
+      type: object
+      required:
+        - id
+        - gameId
+        - nickname
+        - episodes
+        - createdAt
+      properties:
+        id:
+          type: string
+          description: Unique presenter ID
+        gameId:
+          type: string
+          description: Parent game ID
+        nickname:
+          type: string
+          description: Presenter's nickname
+        episodes:
+          type: array
+          minItems: 3
+          maxItems: 3
+          items:
+            $ref: '#/components/schemas/Episode'
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+
+    Episode:
+      type: object
+      required:
+        - id
+        - presenterId
+        - text
+        - isLie
+        - createdAt
+      properties:
+        id:
+          type: string
+          description: Unique episode ID
+        presenterId:
+          type: string
+          description: Parent presenter ID
+        text:
+          type: string
+          description: Episode content
+        isLie:
+          type: boolean
+          description: Whether this is the lie
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+
+    ValidationError:
+      type: object
+      required:
+        - success
+        - errors
+      properties:
+        success:
+          type: boolean
+          enum: [false]
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          description: Field-specific error messages
+
+    AuthError:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          enum: [false]
+        error:
+          type: string
+          example: "セッションが見つかりません。ログインし直してください。"
+
+    ServerError:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          enum: [false]
+        error:
+          type: string
+          example: "プレゼンターの登録に失敗しました"

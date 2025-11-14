@@ -5,6 +5,8 @@ Auto-generated from all feature plans. Last updated: 2025-11-11
 ## Active Technologies
 - TypeScript 5 (strict mode) + Next.js 16.0.1, React 19.2.0, Prisma 6.19.0, Zod 4.1.12 (002-game-preparation)
 - SQLite via Prisma (existing database at `prisma/dev.db`) (002-game-preparation)
+- TypeScript 5 with strict mode enabled + Next.js 16.0.1, React 19.2.0, Tailwind CSS v4, Zod 3.x for validation, nanoid 5.1.6 for ID generation (003-presenter-episode-inline)
+- InMemoryGameRepository (singleton pattern for MVP) (003-presenter-episode-inline)
 
 **Language & Framework**:
 - TypeScript 5 with strict mode enabled
@@ -262,13 +264,13 @@ npm run check              # Lint and format with Biome
    - Game status management (準備中/出題中/締切)
 
 ## Recent Changes
+- 003-presenter-episode-inline: Added TypeScript 5 with strict mode enabled + Next.js 16.0.1, React 19.2.0, Tailwind CSS v4, Zod 3.x for validation, nanoid 5.1.6 for ID generation
 - 002-game-preparation: Added TypeScript 5 (strict mode) + Next.js 16.0.1, React 19.2.0, Prisma 6.19.0, Zod 4.1.12
 
 - 2025-11-11: Migrated from in-memory to SQLite persistence
   - Added Prisma ORM integration
   - Database schema with migrations
   - Repository pattern with SQLite implementation
-- 2025-11-10: Completed game preparation feature
   - Game CRUD operations
   - Status management
   - Authorization checks
