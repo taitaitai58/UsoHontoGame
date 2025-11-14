@@ -2,8 +2,8 @@
 // Feature: 002-game-preparation
 // Tests for retrieving all presenters for a game
 
-import { beforeEach, describe, expect, it } from 'vitest';
 import { nanoid } from 'nanoid';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { GetPresentersByGameId } from '@/server/application/use-cases/games/GetPresentersByGameId';
 import { Episode } from '@/server/domain/entities/Episode';
 import { Presenter } from '@/server/domain/entities/Presenter';

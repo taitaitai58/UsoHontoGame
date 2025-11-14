@@ -80,6 +80,14 @@ export interface IGameRepository {
   addPresenter(presenter: Presenter): Promise<void>;
 
   /**
+   * Create a presenter with episodes in atomic operation (all-or-nothing)
+   * @param presenter Presenter entity to create
+   * @param episodes Array of exactly 3 Episode entities
+   * @returns Created presenter with episodes for verification
+   */
+  createPresenterWithEpisodes(presenter: Presenter, episodes: Episode[]): Promise<Presenter>;
+
+  /**
    * Remove a presenter from a game (cascade deletes episodes)
    * @param presenterId Presenter ID to delete
    */

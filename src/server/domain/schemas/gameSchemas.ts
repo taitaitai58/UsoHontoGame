@@ -77,6 +77,30 @@ export const RemoveEpisodeSchema = z.object({
   episodeId: z.string().uuid(),
 });
 
+// Inline Episode Registration Schema (Feature: 003-presenter-episode-inline)
+export const AddPresenterWithEpisodesSchema = z
+  .object({
+    gameId: GameIdSchema,
+    nickname: z.string().min(1, { message: 'ニックネームを入力してください' }).max(50, {
+      message: 'ニックネームは50文字以下でなければなりません',
+    }),
+    episodes: z
+      .array(
+        z.object({
+          text: z
+            .string()
+            .min(1, { message: 'エピソードを入力してください' })
+            .max(1000, { message: 'エピソードは1000文字以下でなければなりません' }),
+          isLie: z.boolean(),
+        })
+      )
+      .length(3, { message: '3つのエピソードが必要です' }),
+  })
+  .refine((data) => data.episodes.filter((e) => e.isLie).length === 1, {
+    message: 'ウソのエピソードは1つだけ選択してください',
+    path: ['episodes'],
+  });
+
 // Type Inference for TypeScript
 export type CreateGameInput = z.infer<typeof CreateGameSchema>;
 export type UpdateGameInput = z.infer<typeof UpdateGameSchema>;
@@ -87,3 +111,4 @@ export type RemovePresenterInput = z.infer<typeof RemovePresenterSchema>;
 export type AddEpisodeInput = z.infer<typeof AddEpisodeSchema>;
 export type UpdateEpisodeInput = z.infer<typeof UpdateEpisodeSchema>;
 export type RemoveEpisodeInput = z.infer<typeof RemoveEpisodeSchema>;
+export type AddPresenterWithEpisodesInput = z.infer<typeof AddPresenterWithEpisodesSchema>;

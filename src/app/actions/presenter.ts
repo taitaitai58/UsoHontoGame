@@ -12,12 +12,14 @@ import type { EpisodeWithLieDto } from '@/server/application/dto/EpisodeWithLieD
 import type { PresenterWithLieDto } from '@/server/application/dto/PresenterWithLieDto';
 import { AddEpisode } from '@/server/application/use-cases/games/AddEpisode';
 import { AddPresenter } from '@/server/application/use-cases/games/AddPresenter';
+import { AddPresenterWithEpisodes } from '@/server/application/use-cases/games/AddPresenterWithEpisodes';
 import { GetPresenterEpisodes } from '@/server/application/use-cases/games/GetPresenterEpisodes';
 import { GetPresentersByGameId } from '@/server/application/use-cases/games/GetPresentersByGameId';
 import { RemovePresenter } from '@/server/application/use-cases/games/RemovePresenter';
 import {
   AddEpisodeSchema,
   AddPresenterSchema,
+  AddPresenterWithEpisodesSchema,
   RemovePresenterSchema,
 } from '@/server/domain/schemas/gameSchemas';
 import { InMemoryGameRepository } from '@/server/infrastructure/repositories/InMemoryGameRepository';
@@ -303,6 +305,86 @@ export async function getPresentersAction(
     return {
       success: false,
       error: error instanceof Error ? error.message : 'プレゼンターの取得に失敗しました',
+    };
+  }
+}
+
+/**
+ * Add Presenter With Episodes Server Action (Feature: 003-presenter-episode-inline)
+ * Adds a new presenter to a game with 3 episodes in a single atomic operation
+ * This replaces the 2-step process of adding presenter then episodes separately
+ */
+export async function addPresenterWithEpisodesAction(
+  formData: FormData
+): Promise<
+  | { success: true; presenter: PresenterWithLieDto }
+  | { success: false; errors: Record<string, string[]> }
+> {
+  try {
+    // Parse and validate form data
+    const episodesRaw = [];
+    for (let i = 0; i < 3; i += 1) {
+      const text = formData.get(`episodes[${i}].text`) || formData.get(`episode${i}Text`);
+      const isLieStr = formData.get(`episodes[${i}].isLie`) || formData.get(`episode${i}IsLie`);
+      episodesRaw.push({
+        text,
+        isLie: isLieStr === 'true',
+      });
+    }
+
+    const rawData = {
+      gameId: formData.get('gameId'),
+      nickname: formData.get('nickname'),
+      episodes: episodesRaw,
+    };
+
+    const validationResult = AddPresenterWithEpisodesSchema.safeParse(rawData);
+
+    if (!validationResult.success) {
+      return {
+        success: false,
+        errors: validationResult.error.flatten().fieldErrors,
+      };
+    }
+
+    // Get session (for future authorization)
+    const sessionId = await getCookie(COOKIE_NAMES.SESSION_ID);
+
+    if (!sessionId) {
+      return {
+        success: false,
+        errors: {
+          _form: ['セッションが見つかりません。ログインし直してください。'],
+        },
+      };
+    }
+
+    // Execute use case
+    const repository = createRepository();
+    const useCase = new AddPresenterWithEpisodes(repository);
+
+    const result = await useCase.execute({
+      gameId: validationResult.data.gameId,
+      nickname: validationResult.data.nickname,
+      episodes: validationResult.data.episodes,
+    });
+
+    // Revalidate the presenter management page
+    revalidatePath(`/game/${validationResult.data.gameId}/presenters`);
+
+    return {
+      success: true,
+      presenter: result.presenter,
+    };
+  } catch (error) {
+    console.error('Failed to add presenter with episodes:', error);
+    return {
+      success: false,
+      errors: {
+        _form: [
+          error instanceof Error ? error.message : 'プレゼンターとエピソードの追加に失敗しました',
+        ],
+      },
     };
   }
 }

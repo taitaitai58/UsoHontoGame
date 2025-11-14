@@ -132,6 +132,38 @@ export class InMemoryGameRepository implements IGameRepository {
     this.presenters.delete(presenterId);
   }
 
+  /**
+   * Create a presenter with episodes in atomic operation (all-or-nothing)
+   * @param presenter Presenter entity to create
+   * @param episodes Array of exactly 3 Episode entities
+   * @returns Created presenter with episodes for verification
+   */
+  async createPresenterWithEpisodes(presenter: Presenter, episodes: Episode[]): Promise<Presenter> {
+    // Atomic operation: save all or nothing
+    try {
+      // Save presenter
+      this.presenters.set(presenter.id, presenter);
+
+      // Save all episodes
+      for (const episode of episodes) {
+        this.episodes.set(episode.id, episode);
+      }
+
+      // Return presenter with populated episodes
+      return {
+        ...presenter,
+        episodes,
+      } as Presenter;
+    } catch (error) {
+      // Rollback on any error
+      this.presenters.delete(presenter.id);
+      for (const episode of episodes) {
+        this.episodes.delete(episode.id);
+      }
+      throw error;
+    }
+  }
+
   // Episode operations
 
   /**
