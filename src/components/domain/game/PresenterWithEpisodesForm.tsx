@@ -4,11 +4,14 @@
 // Feature: 003-presenter-episode-inline
 // Form for inline presenter registration with 3 episodes in a single operation
 
+import { useEffect, useRef } from 'react';
 import { usePresenterWithEpisodesForm } from '@/hooks/usePresenterWithEpisodesForm';
+
+import type { PresenterWithLieDto } from '@/server/application/dto/PresenterWithLieDto';
 
 interface PresenterWithEpisodesFormProps {
   gameId: string;
-  onSuccess?: () => void;
+  onSuccess?: (presenter: PresenterWithLieDto) => void;
 }
 
 const NICKNAME_MAX = 50;
@@ -21,6 +24,7 @@ export function PresenterWithEpisodesForm({ gameId, onSuccess }: PresenterWithEp
     isSuccess,
     successMessage,
     errors,
+    presenter,
     updateNickname,
     updateEpisodeText,
     updateEpisodeIsLie,
@@ -30,10 +34,20 @@ export function PresenterWithEpisodesForm({ gameId, onSuccess }: PresenterWithEp
     getEpisodeCharCount,
   } = usePresenterWithEpisodesForm(gameId);
 
+  // Track if we've already called onSuccess for this presenter
+  const lastPresenterIdRef = useRef<string | null>(null);
+
+  // Call onSuccess when presenter is available after successful submission
+  useEffect(() => {
+    if (isSuccess && presenter && onSuccess && lastPresenterIdRef.current !== presenter.id) {
+      lastPresenterIdRef.current = presenter.id;
+      onSuccess(presenter);
+    }
+  }, [isSuccess, presenter, onSuccess]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await submit();
-    onSuccess?.();
   };
 
   const handleReset = () => {
