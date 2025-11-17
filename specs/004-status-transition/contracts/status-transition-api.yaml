@@ -1,0 +1,340 @@
+openapi: 3.1.0
+info:
+  title: Game Status Transition API
+  version: 1.0.0
+  description: API endpoints for managing game status transitions
+
+paths:
+  /api/games/{gameId}/status/start:
+    post:
+      summary: Start Game (準備中 → 出題中)
+      operationId: startGame
+      tags:
+        - Game Status
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            description: Unique game identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - sessionId
+              properties:
+                sessionId:
+                  type: string
+                  description: Session ID of requester for authorization
+      responses:
+        '200':
+          description: Game successfully transitioned to 出題中
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusTransitionSuccess'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '403':
+          description: Unauthorized - not game creator
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '404':
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '409':
+          description: Invalid status transition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusTransitionError'
+
+  /api/games/{gameId}/status/close:
+    post:
+      summary: Close Game (出題中 → 締切)
+      operationId: closeGame
+      tags:
+        - Game Status
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            description: Unique game identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - sessionId
+                - confirmed
+              properties:
+                sessionId:
+                  type: string
+                  description: Session ID of requester for authorization
+                confirmed:
+                  type: boolean
+                  description: User confirmation of close action
+      responses:
+        '200':
+          description: Game successfully transitioned to 締切
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusTransitionSuccess'
+        '400':
+          description: Validation error or confirmation missing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '403':
+          description: Unauthorized - not game creator
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+        '404':
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '409':
+          description: Invalid status transition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusTransitionError'
+
+  /api/games/{gameId}/status/validate:
+    get:
+      summary: Validate Status Transition
+      operationId: validateStatusTransition
+      tags:
+        - Game Status
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            description: Unique game identifier
+        - name: targetStatus
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [出題中, 締切]
+            description: Target status to validate transition to
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationResult'
+        '404':
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+
+components:
+  schemas:
+    GameStatus:
+      type: string
+      enum:
+        - 準備中
+        - 出題中
+        - 締切
+      description: Current game status
+
+    StatusTransitionSuccess:
+      type: object
+      required:
+        - success
+        - game
+      properties:
+        success:
+          type: boolean
+          const: true
+        game:
+          type: object
+          required:
+            - id
+            - status
+            - updatedAt
+          properties:
+            id:
+              type: string
+              format: uuid
+            status:
+              $ref: '#/components/schemas/GameStatus'
+            updatedAt:
+              type: string
+              format: date-time
+              description: ISO 8601 timestamp
+
+    ValidationResult:
+      type: object
+      required:
+        - canTransition
+        - currentStatus
+        - targetStatus
+      properties:
+        canTransition:
+          type: boolean
+          description: Whether transition is allowed
+        currentStatus:
+          $ref: '#/components/schemas/GameStatus'
+        targetStatus:
+          $ref: '#/components/schemas/GameStatus'
+        errors:
+          type: array
+          items:
+            type: object
+            required:
+              - code
+              - message
+            properties:
+              code:
+                type: string
+                enum:
+                  - NO_PRESENTERS
+                  - INCOMPLETE_PRESENTER
+                  - INVALID_LIE_COUNT
+                  - GAME_ALREADY_CLOSED
+                  - INVALID_STATUS_TRANSITION
+              message:
+                type: string
+                description: Localized error message
+              details:
+                type: object
+                additionalProperties: true
+                description: Additional error context
+
+    ValidationError:
+      type: object
+      required:
+        - success
+        - errors
+      properties:
+        success:
+          type: boolean
+          const: false
+        errors:
+          type: object
+          properties:
+            status:
+              type: array
+              items:
+                type: string
+              description: Status-related errors
+            presenters:
+              type: array
+              items:
+                type: string
+              description: Presenter validation errors
+            _form:
+              type: array
+              items:
+                type: string
+              description: General form errors
+
+    StatusTransitionError:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          const: false
+        error:
+          type: object
+          required:
+            - code
+            - message
+            - currentStatus
+          properties:
+            code:
+              type: string
+              enum:
+                - INVALID_STATUS_TRANSITION
+                - NO_PRESENTERS
+                - INCOMPLETE_PRESENTER
+                - INVALID_LIE_COUNT
+                - GAME_ALREADY_CLOSED
+            message:
+              type: string
+              description: Localized error message
+            currentStatus:
+              $ref: '#/components/schemas/GameStatus'
+            details:
+              type: object
+              additionalProperties: true
+
+    UnauthorizedError:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          const: false
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              const: UNAUTHORIZED
+            message:
+              type: string
+              const: このゲームを変更する権限がありません
+
+    NotFoundError:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          const: false
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              const: NOT_FOUND
+            message:
+              type: string
+              const: ゲームが見つかりません
