@@ -1,0 +1,39 @@
+/**
+ * ActiveGamesList Component
+ * Feature: 005-top-active-games (User Story 2)
+ *
+ * Container component that renders a list of ActiveGameCard components
+ * Handles layout and spacing for multiple game cards
+ */
+
+import type { ActiveGameListItem } from '@/types/game';
+import { ActiveGameCard } from './ActiveGameCard';
+
+export interface ActiveGamesListProps {
+  /** Array of active games to display */
+  games: ActiveGameListItem[];
+}
+
+/**
+ * ActiveGamesList - Pure presentational component
+ * Renders a grid of game cards with responsive layout
+ */
+export function ActiveGamesList({ games }: ActiveGamesListProps) {
+  if (games.length === 0) {
+    return null;
+  }
+
+  return (
+    <div
+      className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
+      role="list"
+      aria-label="出題中のゲーム一覧"
+    >
+      {games.map((game) => (
+        <div key={game.id} role="listitem">
+          <ActiveGameCard game={game} />
+        </div>
+      ))}
+    </div>
+  );
+}

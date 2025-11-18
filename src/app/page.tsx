@@ -26,16 +26,13 @@ export default async function Page() {
     return <TopPageNicknameSetup />;
   }
 
-  // 4. Fetch available games
-  const { GetAvailableGames } = await import(
-    '@/server/application/use-cases/games/GetAvailableGames'
-  );
-  const { createGameRepository } = await import('@/server/infrastructure/repositories');
+  // 4. Fetch active games (出題中 status only)
+  // Feature: 005-top-active-games
+  const { getActiveGamesAction } = await import('@/app/actions/game');
+  const activeGamesResult = await getActiveGamesAction({ limit: 20 });
 
-  const gameRepository = createGameRepository();
-  const getGamesUseCase = new GetAvailableGames(gameRepository);
-  const games = await getGamesUseCase.execute();
+  // 5. Render page component with session and active games data
+  const games = activeGamesResult.success ? activeGamesResult.games : [];
 
-  // 5. Render page component with session and games data
   return <TopPage nickname={session.nickname || ''} games={games} />;
 }

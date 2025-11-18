@@ -8,6 +8,7 @@ Auto-generated from all feature plans. Last updated: 2025-11-11
 - TypeScript 5 with strict mode enabled + Next.js 16.0.1, React 19.2.0, Tailwind CSS v4, Zod 3.x for validation, nanoid 5.1.6 for ID generation (003-presenter-episode-inline)
 - TypeScript 5 (strict mode) + Next.js 16.0.1, React 19.2.0, Tailwind CSS v4, Zod 4.1.12 (004-status-transition)
 - SQLite via Prisma 6.19.0 (existing database at `prisma/dev.db`) (004-status-transition)
+- TypeScript 5 (strict mode) / Node.js 20 + Next.js 16.0.1, React 19.2.0, Prisma 6.19.0, Tailwind CSS v4 (005-top-active-games)
 
 **Language & Framework**:
 - TypeScript 5 with strict mode enabled
@@ -276,11 +277,28 @@ npm run check              # Lint and format with Biome
    - SQLite persistence with Prisma
    - Game status management (準備中/出題中/締切)
 
+3. **TOP Active Games Display** (005-top-active-games)
+   - Display only active games (出題中 status) on TOP page
+   - Rich game information cards (title, player count, creation time)
+   - Click-to-navigate to game detail pages
+   - Responsive grid layout (1/2/3 columns)
+   - Empty state when no active games
+   - Relative time formatting (たった今, 5分前, 2時間前, 3日前)
+   - Accessibility features (aria-labels, keyboard navigation)
+   - React Query integration for state management
+
 ## Recent Changes
+- 005-top-active-games: Implemented TOP active games display (Phases 1-5 complete)
+  - Created ActiveGameCard, ActiveGamesList, EmptyState components
+  - GetActiveGames use case with status filtering
+  - formatRelativeTime utility for Japanese time display
+  - Navigation with Next.js Link
+  - Accessibility features (ARIA labels, keyboard support)
+  - 28 tests passing (6 use case + 8 TopPage + 14 ActiveGameCard)
+  - React Query provider setup for future auto-refresh
 - 004-status-transition: Added TypeScript 5 (strict mode) + Next.js 16.0.1, React 19.2.0, Tailwind CSS v4, Zod 4.1.12
 - 003-presenter-episode-inline: Added TypeScript 5 with strict mode enabled + Next.js 16.0.1, React 19.2.0, Tailwind CSS v4, Zod 3.x for validation, nanoid 5.1.6 for ID generation
-- 002-game-preparation: Added TypeScript 5 (strict mode) + Next.js 16.0.1, React 19.2.0, Prisma 6.19.0, Zod 4.1.12
-
+- 002-game-preparation:
   - Added Prisma ORM integration
   - Database schema with migrations
   - Repository pattern with SQLite implementation

@@ -1,0 +1,151 @@
+openapi: 3.0.0
+info:
+  title: Active Games API
+  version: 1.0.0
+  description: API for fetching and displaying active games on the TOP page
+
+paths:
+  /api/games/active:
+    get:
+      summary: Get list of active games
+      description: Returns a paginated list of games with "出題中" status
+      operationId: getActiveGames
+      tags:
+        - Games
+      parameters:
+        - in: query
+          name: cursor
+          schema:
+            type: string
+          description: Pagination cursor for next page
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Number of games to return
+      responses:
+        '200':
+          description: Successful response with active games
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActiveGamesResponse'
+              examples:
+                withGames:
+                  value:
+                    games:
+                      - id: "550e8400-e29b-41d4-a716-446655440000"
+                        title: "楽しいゲーム"
+                        createdAt: "2025-01-18T10:30:00Z"
+                        playerCount: 5
+                        playerLimit: 10
+                        formattedCreatedAt: "2時間前"
+                      - id: "660e8400-e29b-41d4-a716-446655440001"
+                        title: "みんなでクイズ"
+                        createdAt: "2025-01-18T09:00:00Z"
+                        playerCount: 8
+                        playerLimit: null
+                        formattedCreatedAt: "3時間前"
+                    hasMore: true
+                    nextCursor: "20"
+                    total: 35
+                emptyState:
+                  value:
+                    games: []
+                    hasMore: false
+                    nextCursor: null
+                    total: 0
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    ActiveGameListItem:
+      type: object
+      required:
+        - id
+        - title
+        - createdAt
+        - playerCount
+        - formattedCreatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier of the game
+        title:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Title of the game
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp of when the game was created
+        playerCount:
+          type: integer
+          minimum: 0
+          description: Current number of players in the game
+        playerLimit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          nullable: true
+          description: Maximum number of players allowed (null = unlimited)
+        formattedCreatedAt:
+          type: string
+          description: Human-readable relative time (e.g., "2時間前")
+
+    ActiveGamesResponse:
+      type: object
+      required:
+        - games
+        - hasMore
+        - total
+      properties:
+        games:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActiveGameListItem'
+          description: List of active games
+        hasMore:
+          type: boolean
+          description: Whether more games are available for pagination
+        nextCursor:
+          type: string
+          nullable: true
+          description: Cursor for fetching the next page of results
+        total:
+          type: integer
+          minimum: 0
+          description: Total count of all active games
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error code
+        message:
+          type: string
+          description: Human-readable error message
+        details:
+          type: object
+          additionalProperties: true
+          description: Additional error details

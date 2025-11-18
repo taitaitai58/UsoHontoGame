@@ -23,3 +23,39 @@ export interface GameSummary {
   /** Current number of registered players */
   currentPlayers: number;
 }
+
+/**
+ * Active game list item for TOP page display
+ * Feature: 005-top-active-games
+ * Contains information needed to display an active game in the list
+ */
+export interface ActiveGameListItem {
+  /** Unique game identifier (UUID) */
+  id: string;
+  /** Game title */
+  title: string;
+  /** ISO 8601 timestamp of when the game was created */
+  createdAt: string;
+  /** Current number of players in the game */
+  playerCount: number;
+  /** Maximum number of players allowed (null = unlimited) */
+  playerLimit: number | null;
+  /** Human-readable relative time (e.g., "2時間前") */
+  formattedCreatedAt: string;
+}
+
+/**
+ * Active games response for server actions
+ * Feature: 005-top-active-games
+ * Contains paginated list of active games with metadata
+ */
+export interface ActiveGamesResponse {
+  /** List of active games */
+  games: ActiveGameListItem[];
+  /** Whether more games are available for pagination */
+  hasMore: boolean;
+  /** Cursor for fetching the next page of results */
+  nextCursor: string | null;
+  /** Total count of all active games */
+  total: number;
+}

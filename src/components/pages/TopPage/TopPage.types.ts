@@ -1,7 +1,7 @@
 // Type definitions for TopPage
-// Feature: 001-session-top-page
+// Feature: 001-session-top-page, 005-top-active-games
 
-import type { GameDto } from '@/server/application/dto/GameDto';
+import type { ActiveGameListItem } from '@/types/game';
 
 /**
  * Props for TopPageNicknameSetup component
@@ -12,10 +12,11 @@ export type TopPageNicknameSetupProps = Record<string, never>;
 /**
  * Props for TopPage component
  * Displayed when user has nickname set
+ * Updated for 005: Now uses ActiveGameListItem for active games display
  */
 export interface TopPageProps {
   /** User's nickname */
   nickname: string;
-  /** List of available games */
-  games: GameDto[];
+  /** List of active games (出題中 status only) */
+  games: ActiveGameListItem[];
 }

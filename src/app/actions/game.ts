@@ -597,3 +597,34 @@ export async function closeGameAction(
     };
   }
 }
+
+/**
+ * Server Action: Get active games for TOP page
+ * Feature: 005-top-active-games
+ *
+ * Fetches games with "出題中" status for display on the TOP page
+ * No authentication required - public access
+ */
+export async function getActiveGamesAction(params?: { cursor?: string; limit?: number }) {
+  try {
+    const { GetActiveGames } = await import(
+      '@/server/application/use-cases/games/GetActiveGames'
+    );
+    const repository = createGameRepository();
+    const useCase = new GetActiveGames(repository);
+
+    const result = await useCase.execute(params || {});
+
+    return {
+      success: true as const,
+      ...result,
+    };
+  } catch (error) {
+    console.error('Failed to fetch active games:', error);
+    return {
+      success: false as const,
+      error: 'FETCH_FAILED',
+      message: error instanceof Error ? error.message : 'アクティブなゲームの取得に失敗しました',
+    };
+  }
+}
