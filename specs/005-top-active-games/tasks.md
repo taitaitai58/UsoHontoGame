@@ -146,10 +146,10 @@ Each phase delivers independently testable value, allowing for early validation 
 
 ### Tasks
 
-- [ ] T049 Run all tests (unit, integration, E2E) and ensure 100% pass
-- [ ] T050 Run Biome formatter on all modified files: `npx biome format --write .`
-- [ ] T051 Update CLAUDE.md with feature completion notes
-- [ ] T052 Commit all changes with appropriate commit message
+- [x] T049 Run all tests (unit, integration, E2E) and ensure 100% pass
+- [x] T050 Run Biome formatter on all modified files: `npx biome format --write .`
+- [x] T051 Update CLAUDE.md with feature completion notes
+- [x] T052 Commit all changes with appropriate commit message
 
 ---
 
