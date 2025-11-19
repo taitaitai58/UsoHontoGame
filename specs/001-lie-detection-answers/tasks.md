@@ -48,22 +48,22 @@ This is a full-stack Next.js application with Clean Architecture:
 
 ### Domain Entities (TDD)
 
-- [ ] T007 [P] Write failing tests for Answer entity in src/server/domain/entities/Answer.test.ts (create, validation, toJSON)
-- [ ] T008 [P] Write failing tests for Participation entity in src/server/domain/entities/Participation.test.ts (create, validation, toJSON)
-- [ ] T009 [P] Implement Answer entity in src/server/domain/entities/Answer.ts to pass T007 tests
-- [ ] T010 [P] Implement Participation entity in src/server/domain/entities/Participation.ts to pass T008 tests
+- [x] T007 [P] Write failing tests for Answer entity in src/server/domain/entities/Answer.test.ts (create, validation, toJSON)
+- [x] T008 [P] Write failing tests for Participation entity in src/server/domain/entities/Participation.test.ts (create, validation, toJSON)
+- [x] T009 [P] Implement Answer entity in src/server/domain/entities/Answer.ts to pass T007 tests
+- [x] T010 [P] Implement Participation entity in src/server/domain/entities/Participation.ts to pass T008 tests
 
 ### Repository Interfaces
 
-- [ ] T011 [P] Create IAnswerRepository interface in src/server/domain/repositories/IAnswerRepository.ts (upsert, findBySessionAndGame, findByGameId, delete methods)
-- [ ] T012 [P] Create IParticipationRepository interface in src/server/domain/repositories/IParticipationRepository.ts (create, exists, countByGameId, findBySessionAndGame methods)
+- [x] T011 [P] Create IAnswerRepository interface in src/server/domain/repositories/IAnswerRepository.ts (upsert, findBySessionAndGame, findByGameId, delete methods)
+- [x] T012 [P] Create IParticipationRepository interface in src/server/domain/repositories/IParticipationRepository.ts (create, exists, countByGameId, findBySessionAndGame methods)
 
 ### Repository Implementations (TDD - Integration Tests)
 
-- [ ] T013 [P] Write failing integration tests for PrismaAnswerRepository in src/server/infrastructure/repositories/PrismaAnswerRepository.test.ts (upsert, find, delete with isolated test DB)
-- [ ] T014 [P] Write failing integration tests for PrismaParticipationRepository in src/server/infrastructure/repositories/PrismaParticipationRepository.test.ts (create, exists, count with isolated test DB)
-- [ ] T015 Implement PrismaAnswerRepository in src/server/infrastructure/repositories/PrismaAnswerRepository.ts to pass T013 tests
-- [ ] T016 Implement PrismaParticipationRepository in src/server/infrastructure/repositories/PrismaParticipationRepository.ts to pass T014 tests
+- [x] T013 [P] Write failing integration tests for PrismaAnswerRepository in src/server/infrastructure/repositories/PrismaAnswerRepository.test.ts (upsert, find, delete with isolated test DB)
+- [x] T014 [P] Write failing integration tests for PrismaParticipationRepository in src/server/infrastructure/repositories/PrismaParticipationRepository.test.ts (create, exists, count with isolated test DB)
+- [x] T015 Implement PrismaAnswerRepository in src/server/infrastructure/repositories/PrismaAnswerRepository.ts to pass T013 tests
+- [x] T016 Implement PrismaParticipationRepository in src/server/infrastructure/repositories/PrismaParticipationRepository.ts to pass T014 tests
 
 ### DTOs & Schemas
 

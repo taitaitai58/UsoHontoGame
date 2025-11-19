@@ -94,6 +94,52 @@ export async function createTestDatabase(testFileName: string): Promise<TestData
     await prisma.$executeRawUnsafe(`
       CREATE INDEX "Episode_presenterId_idx" ON "Episode"("presenterId")
     `);
+
+    // Answer table (001-lie-detection-answers feature)
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE "Answer" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "sessionId" TEXT NOT NULL,
+        "gameId" TEXT NOT NULL,
+        "nickname" TEXT NOT NULL,
+        "selections" TEXT NOT NULL,
+        "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" DATETIME NOT NULL,
+        CONSTRAINT "Answer_gameId_fkey" FOREIGN KEY ("gameId") REFERENCES "Game" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+      )
+    `);
+
+    await prisma.$executeRawUnsafe(`
+      CREATE UNIQUE INDEX "Answer_sessionId_gameId_key" ON "Answer"("sessionId", "gameId")
+    `);
+
+    await prisma.$executeRawUnsafe(`
+      CREATE INDEX "Answer_gameId_idx" ON "Answer"("gameId")
+    `);
+
+    await prisma.$executeRawUnsafe(`
+      CREATE INDEX "Answer_sessionId_idx" ON "Answer"("sessionId")
+    `);
+
+    // Participation table (001-lie-detection-answers feature)
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE "Participation" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "sessionId" TEXT NOT NULL,
+        "gameId" TEXT NOT NULL,
+        "nickname" TEXT NOT NULL,
+        "joinedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "Participation_gameId_fkey" FOREIGN KEY ("gameId") REFERENCES "Game" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+      )
+    `);
+
+    await prisma.$executeRawUnsafe(`
+      CREATE UNIQUE INDEX "Participation_sessionId_gameId_key" ON "Participation"("sessionId", "gameId")
+    `);
+
+    await prisma.$executeRawUnsafe(`
+      CREATE INDEX "Participation_gameId_idx" ON "Participation"("gameId")
+    `);
   } catch (error) {
     await prisma.$disconnect();
     throw new Error(`Failed to setup test database: ${error}`);
@@ -103,6 +149,8 @@ export async function createTestDatabase(testFileName: string): Promise<TestData
     try {
       // Clean up database content (ignore if tables don't exist)
       try {
+        await prisma.answer.deleteMany();
+        await prisma.participation.deleteMany();
         await prisma.episode.deleteMany();
         await prisma.presenter.deleteMany();
         await prisma.game.deleteMany();
