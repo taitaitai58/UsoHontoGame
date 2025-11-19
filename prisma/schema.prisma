@@ -14,15 +14,17 @@ datasource db {
 // Game Preparation Feature Models (002-game-preparation)
 
 model Game {
-  id             String      @id @default(uuid())
-  name           String?     // Game display name (optional, max 100 chars, defaults to UUID display)
-  creatorId      String      // Session ID of the moderator
-  maxPlayers     Int         // Maximum number of players (1-100)
-  currentPlayers Int         @default(0) // Current number of registered players
-  status         String      @default("準備中") // GameStatus: 準備中, 出題中, 締切
-  presenters     Presenter[] // 0-10 presenters
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  id              String          @id @default(uuid())
+  name            String?         // Game display name (optional, max 100 chars, defaults to UUID display)
+  creatorId       String          // Session ID of the moderator
+  maxPlayers      Int             // Maximum number of players (1-100)
+  currentPlayers  Int             @default(0) // Current number of registered players
+  status          String          @default("準備中") // GameStatus: 準備中, 出題中, 締切
+  presenters      Presenter[]     // 0-10 presenters
+  answers         Answer[]        // Answer submissions (001-lie-detection-answers)
+  participations  Participation[] // Participation tracking (001-lie-detection-answers)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 
   @@index([creatorId])
   @@index([status])
@@ -50,4 +52,35 @@ model Episode {
   presenter Presenter @relation(fields: [presenterId], references: [id], onDelete: Cascade)
 
   @@index([presenterId])
+}
+
+// Answer Submission Feature Models (001-lie-detection-answers)
+
+model Answer {
+  id         String   @id @default(uuid())
+  sessionId  String   // Session cookie identifier
+  gameId     String   // Foreign key to Game
+  nickname   String   // Participant display name from session
+  selections Json     // Map of presenterId to episodeId { "presenterId": "episodeId" }
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, gameId]) // One answer per session per game
+  @@index([gameId])
+  @@index([sessionId])
+}
+
+model Participation {
+  id        String   @id @default(uuid())
+  sessionId String   // Session cookie identifier
+  gameId    String   // Foreign key to Game
+  nickname  String   // Participant display name
+  joinedAt  DateTime @default(now())
+
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, gameId]) // One participation record per session per game
+  @@index([gameId])
 }
