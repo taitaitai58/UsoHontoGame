@@ -434,11 +434,43 @@ describe('useNicknameForm', () => {
   });
 
   describe('Transition State', () => {
-    // Skip tests for isSubmitting state during async operations
-    // Testing isPending state with useTransition is complex
-    // The isSubmitting state is tested indirectly through component tests
-    it.skip('should set isSubmitting during async operation', () => {
-      // Skipped: Testing async transition state is complex
+    it('should set isSubmitting to true during async operation', async () => {
+      // Mock action to have a delay
+      let resolveAction: (value: any) => void;
+      const actionPromise = new Promise((resolve) => {
+        resolveAction = resolve;
+      });
+
+      vi.mocked(setNicknameAction).mockImplementation(() => actionPromise as any);
+
+      const { result } = renderHook(() => useNicknameForm());
+
+      // Set valid nickname
+      act(() => {
+        result.current.handleChange('TestUser');
+      });
+
+      expect(result.current.isSubmitting).toBe(false);
+
+      // Start submission (don't await yet)
+      act(() => {
+        result.current.handleSubmit();
+      });
+
+      // isSubmitting should be true immediately after calling handleSubmit
+      await waitFor(() => {
+        expect(result.current.isSubmitting).toBe(true);
+      });
+
+      // Resolve the action
+      act(() => {
+        resolveAction!({ success: true });
+      });
+
+      // Wait for transition to complete
+      await waitFor(() => {
+        expect(result.current.isSubmitting).toBe(false);
+      });
     });
   });
 

@@ -302,20 +302,67 @@ describe('useEpisodeForm', () => {
   });
 
   describe('Server-side Errors', () => {
-    // Skip these tests as they require complex async timing with useTransition
-    // The error handling logic is covered by the validation tests
-    // Integration tests at the component level verify error display
-    it.skip('should handle server-side errors', () => {
-      // Skipped: Testing async error state with useTransition is complex
-      // Error handling is tested in integration tests
+    it('should handle server-side errors', async () => {
+      mockAddEpisodeSchema.safeParse.mockReturnValue({
+        success: true,
+        data: { presenterId: 'presenter-123', text: 'Episode', isLie: false },
+      });
+
+      vi.mocked(addEpisodeAction).mockResolvedValue({
+        success: false,
+        errors: {
+          _form: ['サーバーエラーが発生しました'],
+        },
+      });
+
+      const { result } = renderHook(() => useEpisodeForm({ presenterId: 'presenter-123' }));
+      const mockEvent = createFormEvent({ text: 'Episode', isLie: 'false' });
+
+      await act(async () => {
+        await result.current.handleSubmit(mockEvent);
+      });
+
+      await waitFor(() => {
+        expect(result.current.errors).toEqual({
+          _form: ['サーバーエラーが発生しました'],
+        });
+      });
+
+      expect(result.current.isSuccess).toBe(false);
+      expect(result.current.createdEpisode).toBe(null);
     });
   });
 
   describe('Exception Handling', () => {
-    // Skip these tests as they require complex async timing with useTransition
-    it.skip('should handle exceptions', () => {
-      // Skipped: Testing async exception handling with useTransition is complex
-      // Error handling is tested in integration tests
+    it('should handle exceptions during server action', async () => {
+      mockAddEpisodeSchema.safeParse.mockReturnValue({
+        success: true,
+        data: { presenterId: 'presenter-123', text: 'Episode', isLie: false },
+      });
+
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.mocked(addEpisodeAction).mockRejectedValue(new Error('Network error'));
+
+      const { result } = renderHook(() => useEpisodeForm({ presenterId: 'presenter-123' }));
+      const mockEvent = createFormEvent({ text: 'Episode', isLie: 'false' });
+
+      await act(async () => {
+        await result.current.handleSubmit(mockEvent);
+      });
+
+      await waitFor(() => {
+        expect(result.current.errors).toEqual({
+          _form: ['予期しないエラーが発生しました'],
+        });
+      });
+
+      expect(result.current.isSuccess).toBe(false);
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'Form submission error:',
+        expect.any(Error)
+      );
+
+      consoleErrorSpy.mockRestore();
     });
   });
 
@@ -370,10 +417,46 @@ describe('useEpisodeForm', () => {
   });
 
   describe('Transition State', () => {
-    // Skip these tests as they require testing isPending state during async operations
-    it.skip('should handle transition state', () => {
-      // Skipped: Testing isSubmitting during useTransition is complex
-      // The isSubmitting state is used in the component and tested there
+    it('should set isSubmitting to true during async operation', async () => {
+      mockAddEpisodeSchema.safeParse.mockReturnValue({
+        success: true,
+        data: { presenterId: 'presenter-123', text: 'Episode', isLie: false },
+      });
+
+      // Mock action with delayed resolution
+      let resolveAction: (value: any) => void;
+      const actionPromise = new Promise((resolve) => {
+        resolveAction = resolve;
+      });
+      vi.mocked(addEpisodeAction).mockImplementation(() => actionPromise as any);
+
+      const { result } = renderHook(() => useEpisodeForm({ presenterId: 'presenter-123' }));
+      const mockEvent = createFormEvent({ text: 'Episode', isLie: 'false' });
+
+      expect(result.current.isSubmitting).toBe(false);
+
+      // Start submission
+      act(() => {
+        result.current.handleSubmit(mockEvent);
+      });
+
+      // isSubmitting should become true
+      await waitFor(() => {
+        expect(result.current.isSubmitting).toBe(true);
+      });
+
+      // Resolve action
+      act(() => {
+        resolveAction!({
+          success: true,
+          episode: { id: 'ep-1', text: 'Episode', isLie: false },
+        });
+      });
+
+      // isSubmitting should become false
+      await waitFor(() => {
+        expect(result.current.isSubmitting).toBe(false);
+      });
     });
   });
 
