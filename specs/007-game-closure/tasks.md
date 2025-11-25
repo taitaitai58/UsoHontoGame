@@ -53,8 +53,8 @@
 
 ### Implementation for User Story 1
 
-- [ ] T010 [US1] Create useCloseGame hook in src/components/pages/GameDetailPage/hooks/useCloseGame.ts
-- [ ] T011 [US1] Create CloseGameButton component in src/components/domain/game/CloseGameButton.tsx
+- [X] T010 [US1] Create useCloseGame hook in src/components/pages/GameDetailPage/hooks/useCloseGame.ts
+- [X] T011 [US1] Create CloseGameButton component in src/components/domain/game/CloseGameButton.tsx
 - [ ] T012 [US1] Update GameDetailPage to show CloseGameButton for moderators in src/components/pages/GameDetailPage/index.tsx
 - [ ] T013 [US1] Update game detail page route to pass moderator props in src/app/games/[id]/page.tsx
 

@@ -184,59 +184,28 @@ describe('CloseGameButton', () => {
   });
 
   describe('callbacks', () => {
-    it('should call onClosed callback after successful close', async () => {
+    it('should pass onClosed callback to hook', () => {
       const mockOnClosed = vi.fn();
-      const mockCloseGame = vi.fn().mockResolvedValue(undefined);
-
-      // First render with isClosing: false
-      const { rerender } = render(
-        <TestWrapper>
-          <CloseGameButton {...defaultProps} onClosed={mockOnClosed} />
-        </TestWrapper>
-      );
 
       vi.mocked(mockUseCloseGame).mockReturnValue({
-        closeGame: mockCloseGame,
+        closeGame: vi.fn(),
         isClosing: false,
         error: null,
       });
 
-      const button = screen.getByRole('button', { name: /締切にする/i });
-
-      // Simulate close action
-      await act(async () => {
-        fireEvent.click(button);
-      });
-
-      // Rerender with isClosing: true to simulate loading state
-      vi.mocked(mockUseCloseGame).mockReturnValue({
-        closeGame: mockCloseGame,
-        isClosing: true,
-        error: null,
-      });
-
-      rerender(
+      render(
         <TestWrapper>
           <CloseGameButton {...defaultProps} onClosed={mockOnClosed} />
         </TestWrapper>
       );
 
-      // Rerender with isClosing: false to simulate success
-      vi.mocked(mockUseCloseGame).mockReturnValue({
-        closeGame: mockCloseGame,
-        isClosing: false,
-        error: null,
-      });
-
-      rerender(
-        <TestWrapper>
-          <CloseGameButton {...defaultProps} onClosed={mockOnClosed} />
-        </TestWrapper>
+      // Verify that the hook is called with onSuccess callback
+      // The actual callback invocation is tested in the hook tests
+      expect(mockUseCloseGame).toHaveBeenCalledWith(
+        expect.objectContaining({
+          onSuccess: expect.any(Function),
+        })
       );
-
-      // Note: The actual onClosed callback will be called by the hook's onSuccess
-      // This test verifies the prop is passed correctly
-      expect(mockOnClosed).toBeDefined();
     });
   });
 
