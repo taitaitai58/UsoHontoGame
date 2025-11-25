@@ -36,5 +36,5 @@ export default async function Page({ params }: PageProps) {
   }
 
   // Render page component with game data
-  return <GameDetailPage game={result.game} />;
+  return <GameDetailPage game={result.game} currentSessionId={sessionId} />;
 }

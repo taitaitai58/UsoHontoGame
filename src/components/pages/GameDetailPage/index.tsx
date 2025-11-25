@@ -5,6 +5,7 @@
 'use client';
 
 import { useState } from 'react';
+import { CloseGameButton } from '@/components/domain/game/CloseGameButton';
 import { DeleteGameButton } from '@/components/domain/game/DeleteGameButton';
 import { GameForm } from '@/components/domain/game/GameForm';
 import { GameStatusBadge } from '@/components/domain/game/GameStatusBadge';
@@ -22,7 +23,7 @@ import { useGameStatus } from './hooks/useGameStatus';
  *
  * @param props - Component props including game data
  */
-export function GameDetailPage({ game }: GameDetailPageProps) {
+export function GameDetailPage({ game, currentSessionId }: GameDetailPageProps) {
   const { toasts, showSuccess, showError, removeToast } = useToast();
   const [isTransitioning, setIsTransitioning] = useState(false);
 
@@ -43,6 +44,9 @@ export function GameDetailPage({ game }: GameDetailPageProps) {
 
   // Check if game can be edited (only 準備中 status)
   const canEdit = currentStatus === '準備中';
+
+  // Check if current user is the game moderator/creator
+  const isModerator = currentSessionId && game.creatorId === currentSessionId;
 
   return (
     <AccessibilityProvider>
@@ -73,6 +77,17 @@ export function GameDetailPage({ game }: GameDetailPageProps) {
                   setIsTransitioning(false);
                 }}
               />
+              {isModerator && (
+                <CloseGameButton
+                  gameId={game.id}
+                  gameStatus={currentStatus as '準備中' | '出題中' | '締切'}
+                  onClosed={() => {
+                    showSuccess('ゲームを締め切りました', 'ゲーム締切');
+                    // Trigger page refresh or state update
+                    window.location.reload();
+                  }}
+                />
+              )}
             </div>
           </div>
         </div>

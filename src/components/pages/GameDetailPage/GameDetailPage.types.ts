@@ -22,6 +22,8 @@ export interface GameDetail {
 export interface GameDetailPageProps {
   /** Game data to display */
   game: GameDetail;
+  /** Current user's session ID for authorization checks */
+  currentSessionId?: string;
 }
 
 /**
