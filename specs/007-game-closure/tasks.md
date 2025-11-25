@@ -92,12 +92,12 @@
 
 ### Tests for User Story 2
 
-- [ ] T020 [P] [US2] Write tests for closed game validation in SubmitAnswers use case (existing file, add cases)
-- [ ] T021 [P] [US2] Write tests for answer page closed game handling
+- [X] T020 [P] [US2] Write tests for closed game validation in SubmitAnswers use case (existing file, add cases)
+- [X] T021 [P] [US2] Write tests for answer page closed game handling
 
 ### Implementation for User Story 2
 
-- [ ] T022 [US2] Add closed game check to GetGameForAnswers use case in src/server/application/use-cases/answers/GetGameForAnswers.ts
+- [X] T022 [US2] Add closed game check to GetGameForAnswers use case in src/server/application/use-cases/answers/GetGameForAnswers.ts
 - [ ] T023 [US2] Update answer page to handle closed game redirect in src/app/games/[id]/answer/page.tsx
 - [ ] T024 [US2] Create read-only answer view for existing participants who submitted before closure
 
