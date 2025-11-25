@@ -201,7 +201,10 @@ describe('Status Transition Server Actions', () => {
         '締切',
         'session-123'
       );
-      expect(mockCloseGame.execute).toHaveBeenCalledWith({ gameId: 'game-123' });
+      expect(mockCloseGame.execute).toHaveBeenCalledWith({
+        gameId: 'game-123',
+        sessionId: 'session-123',
+      });
     });
 
     it('should return validation errors when transition is not allowed', async () => {

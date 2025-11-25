@@ -579,6 +579,7 @@ export async function closeGameAction(
     const closeUseCase = new CloseGame(repository);
     await closeUseCase.execute({
       gameId: validationResult.data.gameId,
+      sessionId: validationResult.data.sessionId,
     });
 
     // Revalidate paths for cache management

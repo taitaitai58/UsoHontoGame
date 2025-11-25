@@ -33,8 +33,8 @@
 
 - [X] T004 Write unit tests for CloseGame use case in src/server/application/use-cases/games/CloseGame.test.ts
 - [X] T005 Implement CloseGame use case in src/server/application/use-cases/games/CloseGame.ts
-- [ ] T006 Add closeGame server action to src/app/actions/game.ts
-- [ ] T007 Write unit tests for closeGame server action in src/app/actions/game.test.ts
+- [X] T006 Add closeGame server action to src/app/actions/game.ts
+- [X] T007 Write unit tests for closeGame server action in src/app/actions/game.test.ts
 
 **Checkpoint**: Foundation ready - CloseGame use case available for UI components
 
