@@ -187,3 +187,6 @@ export function ResponseStatusPage({ gameId, initialData }: ResponseStatusPagePr
     </AccessibilityProvider>
   );
 }
+
+// Export error component for error handling
+export { ResponseStatusPageError } from './ResponseStatusPageError';

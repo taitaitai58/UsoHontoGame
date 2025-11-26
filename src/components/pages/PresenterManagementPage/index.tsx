@@ -1,3 +1,5 @@
+'use client';
+
 // Presenter Management Page Component
 // Feature: 002-game-preparation
 // Presentational component for presenter and episode management

@@ -25,7 +25,7 @@ import {
 } from '@/server/domain/schemas/gameSchemas';
 import { GameId } from '@/server/domain/value-objects/GameId';
 import { SessionServiceContainer } from '@/server/infrastructure/di/SessionServiceContainer';
-import { createGameRepository } from '@/server/infrastructure/repositories';
+import { createAnswerRepository, createGameRepository } from '@/server/infrastructure/repositories';
 
 /**
  * Helper function to get session ID with consistent error handling
@@ -624,6 +624,40 @@ export async function getActiveGamesAction(params?: { cursor?: string; limit?: n
       success: false as const,
       error: 'FETCH_FAILED',
       message: error instanceof Error ? error.message : 'アクティブなゲームの取得に失敗しました',
+    };
+  }
+}
+
+/**
+ * Server Action: Get response status for dashboard display
+ * Feature: 006-results-dashboard (User Story 1)
+ * Feature: 007-game-closure (User Story 3)
+ *
+ * Fetches response status data for the dashboard page (SSR)
+ * Encapsulates repository and use case instantiation
+ */
+export async function getResponseStatusAction(gameId: string) {
+  try {
+    // Create repositories (encapsulated in server action)
+    const gameRepository = createGameRepository();
+    const answerRepository = createAnswerRepository();
+
+    // Execute use case
+    const { GetResponseStatus } = await import(
+      '@/server/application/use-cases/results/GetResponseStatus'
+    );
+    const useCase = new GetResponseStatus(gameRepository, answerRepository);
+    const result = await useCase.execute(gameId);
+
+    // Return standardized response
+    return result;
+  } catch (error) {
+    console.error('Error in getResponseStatusAction:', error);
+    return {
+      success: false as const,
+      errors: {
+        _form: [error instanceof Error ? error.message : 'Failed to get response status'],
+      },
     };
   }
 }

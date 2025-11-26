@@ -1,10 +1,7 @@
-'use client';
-
 // App Router Page: Presenter Management
 // Feature: 002-game-preparation
 // Thin wrapper that delegates to PresenterManagementPage component
 
-import { use } from 'react';
 import { PresenterManagementPage } from '@/components/pages/PresenterManagementPage';
 
 interface PageProps {
@@ -15,8 +12,8 @@ interface PageProps {
  * Next.js App Router page for /games/[id]/presenters
  * This is a thin wrapper that extracts params and passes them to the page component
  */
-export default function Page({ params }: PageProps) {
-  const { id: gameId } = use(params);
+export default async function Page({ params }: PageProps) {
+  const { id: gameId } = await params;
 
   return <PresenterManagementPage gameId={gameId} />;
 }

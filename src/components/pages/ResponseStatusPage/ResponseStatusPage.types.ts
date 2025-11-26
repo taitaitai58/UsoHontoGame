@@ -39,3 +39,12 @@ export interface ResponseStatusError {
   /** HTTP status code */
   statusCode?: number;
 }
+
+/**
+ * Props for ResponseStatusPageError component
+ * Used when dashboard data fetching fails
+ */
+export interface ResponseStatusPageErrorProps {
+  /** Error message to display to user */
+  errorMessage: string;
+}
