@@ -3,6 +3,7 @@
 // Server Actions for session management
 // Provides server-side functions for session operations
 
+import { t } from '@/lib/i18n/server';
 import { CreateSession } from '@/server/application/use-cases/session/CreateSession';
 import { SetNickname } from '@/server/application/use-cases/session/SetNickname';
 import { ValidateSession } from '@/server/application/use-cases/session/ValidateSession';
@@ -81,7 +82,7 @@ export async function setNicknameAction(nickname: string): Promise<SetNicknameRe
         success: false,
         error: {
           code: 'NICKNAME_UPDATE_FAILED',
-          message: 'ニックネームの設定に失敗しました',
+          message: await t('errors.unexpectedError'),
         },
       };
     }
@@ -96,7 +97,7 @@ export async function setNicknameAction(nickname: string): Promise<SetNicknameRe
         success: false,
         error: {
           code: 'EMPTY_NICKNAME',
-          message: 'ニックネームを入力してください',
+          message: await t('validation.nickname.empty'),
         },
       };
     }
@@ -106,7 +107,7 @@ export async function setNicknameAction(nickname: string): Promise<SetNicknameRe
         success: false,
         error: {
           code: 'NICKNAME_TOO_LONG',
-          message: 'ニックネームは50文字以内で入力してください',
+          message: await t('validation.nickname.tooLong'),
         },
       };
     }
@@ -115,7 +116,7 @@ export async function setNicknameAction(nickname: string): Promise<SetNicknameRe
       success: false,
       error: {
         code: 'NICKNAME_UPDATE_FAILED',
-        message: 'ニックネームの設定に失敗しました',
+        message: await t('errors.unexpectedError'),
       },
     };
   }

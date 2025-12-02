@@ -4,6 +4,7 @@
 // Feature: 002-game-preparation
 // Form for creating/editing games with player limit validation
 
+import { useLanguage } from '@/hooks/useLanguage';
 import { useGameForm } from '@/hooks/useGameForm';
 
 interface GameFormProps {
@@ -28,6 +29,7 @@ export function GameForm({
   initialPlayerLimit = 10,
   currentPlayers = 0,
 }: GameFormProps) {
+  const { t } = useLanguage();
   const { handleSubmit, isSubmitting, errors, isSuccess } = useGameForm({
     mode,
     gameId,
@@ -37,14 +39,14 @@ export function GameForm({
 
   return (
     <div className={isEditMode ? '' : 'max-w-md mx-auto p-6'}>
-      {!isEditMode && <h1 className="text-2xl font-bold mb-6">新しいゲームを作成</h1>}
+      {!isEditMode && <h1 className="text-2xl font-bold mb-6">{t('game.newGame')}</h1>}
 
       {isSuccess && (
         <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-md" role="alert">
           <p className="text-green-800">
             {isEditMode
-              ? 'ゲーム設定を更新しました！'
-              : 'ゲームを作成しました！ゲーム一覧にリダイレクトしています...'}
+              ? t('action.game.update.success')
+              : `${t('action.game.create.success')} ${t('common.loading')}`}
           </p>
         </div>
       )}
@@ -56,21 +58,21 @@ export function GameForm({
         {/* Game Name Input (optional) */}
         <div>
           <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-            ゲーム名 (任意, 最大100文字)
+            {t('form.game.name.label')} ({t('form.game.name.optional')}, {t('validation.game.name.tooLong')})
           </label>
           <input
             type="text"
             id="name"
             name="name"
             maxLength={100}
-            placeholder="未入力の場合はゲームIDが表示されます"
+            placeholder={t('form.game.name.placeholder')}
             disabled={isSubmitting || isSuccess}
             className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
             aria-describedby={errors.name ? 'name-error' : undefined}
             aria-invalid={errors.name ? 'true' : 'false'}
           />
           <p className="mt-1 text-xs text-gray-500">
-            ゲームを識別しやすい名前を付けることができます
+            {t('form.game.name.description')}
           </p>
           {errors.name && (
             <p id="name-error" className="mt-1 text-sm text-red-600" role="alert">
@@ -82,7 +84,7 @@ export function GameForm({
         {/* Player Limit Input */}
         <div>
           <label htmlFor="playerLimit" className="block text-sm font-medium text-gray-700 mb-2">
-            プレイヤー数上限 (1-100)
+            {t('form.game.playerLimit.label')} (1-100)
           </label>
           <input
             type="number"
@@ -99,8 +101,7 @@ export function GameForm({
           />
           {isEditMode && currentPlayers > 0 && (
             <p className="mt-1 text-xs text-gray-500">
-              現在{currentPlayers}人が参加しているため、{currentPlayers}
-              人以上の値を設定してください
+              {t('form.game.playerLimit.currentPlayers').replace('{count}', String(currentPlayers))}
             </p>
           )}
           {errors.playerLimit && (
@@ -126,18 +127,18 @@ export function GameForm({
           >
             {isSubmitting
               ? isEditMode
-                ? '更新中...'
-                : '作成中...'
+                ? t('status.labels.updating')
+                : t('common.loading')
               : isEditMode
-                ? '設定を更新'
-                : 'ゲームを作成'}
+                ? t('game.editSettings')
+                : t('game.createGame')}
           </button>
 
           <a
             href={isEditMode ? `/games/${gameId}` : '/top'}
             className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors text-center"
           >
-            キャンセル
+            {t('common.cancel')}
           </a>
         </div>
       </form>
@@ -145,9 +146,7 @@ export function GameForm({
       {/* Help Text */}
       {!isEditMode && (
         <div className="mt-6 text-sm text-gray-600">
-          <p>
-            作成されたゲームは「準備中」ステータスで開始されます。プレゼンターを追加してエピソードを登録後、「出題中」に変更できます。
-          </p>
+          <p>{t('game.createHelp')}</p>
         </div>
       )}
     </div>

@@ -1,5 +1,5 @@
 // Zod Schemas: Answer Validation
-// Runtime validation schemas for answer-related operations
+// Runtime validation schemas with error codes for i18n translation via translateZodError()
 
 import { z } from 'zod';
 
@@ -8,15 +8,15 @@ import { z } from 'zod';
  * Validates game ID and selections (presenterId -> episodeId mapping)
  */
 export const SubmitAnswerSchema = z.object({
-  gameId: z.string().min(1, 'Game ID is required'),
+  gameId: z.string().min(1, 'REQUIRED'),
   selections: z
     .record(
-      z.string().min(1, 'Presenter ID is required'),
-      z.string().min(1, 'Episode ID is required')
+      z.string().min(1, 'REQUIRED'),
+      z.string().min(1, 'REQUIRED')
     )
     .refine(
       (selections) => Object.keys(selections).length > 0,
-      'At least one selection is required'
+      'ANSWER_NO_SELECTIONS'
     ),
 });
 

@@ -5,6 +5,7 @@
 // Server Actions for managing presenters and episodes
 
 import { revalidatePath } from 'next/cache';
+import { t } from '@/lib/i18n/server';
 import type { EpisodeWithLieDto } from '@/server/application/dto/EpisodeWithLieDto';
 import type { PresenterWithLieDto } from '@/server/application/dto/PresenterWithLieDto';
 import { AddEpisode } from '@/server/application/use-cases/games/AddEpisode';
@@ -33,7 +34,7 @@ async function getSessionIdOrError(): Promise<
     return {
       success: false,
       errors: {
-        _form: ['セッションが見つかりません。ログインし直してください。'],
+        _form: [await t('action.session.notFound')],
       },
     };
   }
@@ -93,7 +94,7 @@ export async function addPresenterAction(
     return {
       success: false,
       errors: {
-        _form: [error instanceof Error ? error.message : 'プレゼンターの追加に失敗しました'],
+        _form: [error instanceof Error ? error.message : await t('action.presenter.add.error')],
       },
     };
   }
@@ -128,7 +129,7 @@ export async function removePresenterAction(
       return {
         success: false,
         errors: {
-          _form: ['セッションが見つかりません。ログインし直してください。'],
+          _form: [await t('action.session.notFound')],
         },
       };
     }
@@ -153,7 +154,7 @@ export async function removePresenterAction(
     return {
       success: false,
       errors: {
-        _form: [error instanceof Error ? error.message : 'プレゼンターの削除に失敗しました'],
+        _form: [error instanceof Error ? error.message : await t('action.presenter.delete.error')],
       },
     };
   }
@@ -197,7 +198,7 @@ export async function addEpisodeAction(
       return {
         success: false,
         errors: {
-          _form: ['セッションが見つかりません。ログインし直してください。'],
+          _form: [await t('action.session.notFound')],
         },
       };
     }
@@ -231,7 +232,7 @@ export async function addEpisodeAction(
     return {
       success: false,
       errors: {
-        _form: [error instanceof Error ? error.message : 'エピソードの追加に失敗しました'],
+        _form: [error instanceof Error ? error.message : await t('action.episode.add.error')],
       },
     };
   }
@@ -281,7 +282,7 @@ export async function addPresenterWithEpisodesAction(
       return {
         success: false,
         errors: {
-          _form: ['セッションが見つかりません。ログインし直してください。'],
+          _form: [await t('action.session.notFound')],
         },
       };
     }
@@ -310,7 +311,7 @@ export async function addPresenterWithEpisodesAction(
       success: false,
       errors: {
         _form: [
-          error instanceof Error ? error.message : 'プレゼンターとエピソードの追加に失敗しました',
+          error instanceof Error ? error.message : await t('action.presenter.add.error'),
         ],
       },
     };

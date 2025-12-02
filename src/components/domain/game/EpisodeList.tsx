@@ -4,6 +4,7 @@
 // Feature: 002-game-preparation
 // Client Component that displays list of episodes with lie markers (confidential)
 
+import { useLanguage } from '@/hooks/useLanguage';
 import type { EpisodeWithLieDto } from '@/server/application/dto/EpisodeWithLieDto';
 
 export interface EpisodeListProps {
@@ -19,6 +20,7 @@ export interface EpisodeListProps {
  * Shows completion status and lie marker validation
  */
 export function EpisodeList({ episodes, presenterNickname }: EpisodeListProps) {
+  const { t } = useLanguage();
   const isComplete = episodes.length === 3;
   const hasLie = episodes.some((ep) => ep.isLie);
   const lieCount = episodes.filter((ep) => ep.isLie).length;
@@ -26,9 +28,9 @@ export function EpisodeList({ episodes, presenterNickname }: EpisodeListProps) {
   if (episodes.length === 0) {
     return (
       <div className="rounded-lg border border-gray-200 bg-gray-50 p-6 text-center">
-        <p className="text-gray-600">エピソードが登録されていません</p>
+        <p className="text-gray-600">{t('episode.noEpisodes')}</p>
         <p className="mt-2 text-sm text-gray-500">
-          3つのエピソード（2つのホント、1つのウソ）を登録してください。
+          {t('episode.episodeManagementDescription')}
         </p>
       </div>
     );
@@ -43,16 +45,16 @@ export function EpisodeList({ episodes, presenterNickname }: EpisodeListProps) {
             {presenterNickname && (
               <h3 className="text-lg font-semibold text-gray-900">{presenterNickname}</h3>
             )}
-            <p className="text-sm text-gray-600">登録済み: {episodes.length}/3 エピソード</p>
+            <p className="text-sm text-gray-600">{t('episode.registered')}: {episodes.length}/3 {t('game.episodes')}</p>
           </div>
           <div>
             {isComplete && hasLie && lieCount === 1 ? (
               <span className="rounded-lg bg-green-100 px-3 py-1 text-sm font-medium text-green-800">
-                ✓ 完了
+                ✓ {t('status.labels.complete')}
               </span>
             ) : (
               <span className="rounded-lg bg-yellow-100 px-3 py-1 text-sm font-medium text-yellow-800">
-                未完了
+                {t('status.labels.incomplete')}
               </span>
             )}
           </div>
@@ -61,14 +63,14 @@ export function EpisodeList({ episodes, presenterNickname }: EpisodeListProps) {
         {/* Validation Messages */}
         {!isComplete && (
           <p className="mt-2 text-sm text-gray-600">
-            あと {3 - episodes.length} つのエピソードが必要です
+            {t('episode.remainingCount').replace('{count}', String(3 - episodes.length))}
           </p>
         )}
         {isComplete && !hasLie && (
-          <p className="mt-2 text-sm text-red-600">⚠ ウソのエピソードを1つ登録してください</p>
+          <p className="mt-2 text-sm text-red-600">⚠ {t('validation.episode.needOneLie')}</p>
         )}
         {lieCount > 1 && (
-          <p className="mt-2 text-sm text-red-600">⚠ ウソのエピソードは1つだけにしてください</p>
+          <p className="mt-2 text-sm text-red-600">⚠ {t('validation.episode.onlyOneLie')}</p>
         )}
       </div>
 
@@ -82,19 +84,19 @@ export function EpisodeList({ episodes, presenterNickname }: EpisodeListProps) {
             }`}
           >
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">エピソード {index + 1}</span>
+              <span className="text-sm font-medium text-gray-700">{t('game.episode')} {index + 1}</span>
               {episode.isLie ? (
                 <span className="rounded bg-red-600 px-2 py-1 text-xs font-bold text-white">
-                  ウソ
+                  {t('game.lie')}
                 </span>
               ) : (
                 <span className="rounded bg-green-600 px-2 py-1 text-xs font-bold text-white">
-                  ホント
+                  {t('game.truth')}
                 </span>
               )}
             </div>
             <p className="text-sm text-gray-900">{episode.text}</p>
-            <p className="mt-2 text-xs text-gray-500">文字数: {episode.text.length}/1000</p>
+            <p className="mt-2 text-xs text-gray-500">{t('episode.characterCount')}: {episode.text.length}/1000</p>
           </div>
         ))}
       </div>

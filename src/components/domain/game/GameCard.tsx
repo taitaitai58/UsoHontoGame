@@ -2,6 +2,9 @@
 // Feature: 002-game-preparation
 // Card component for displaying game information
 
+'use client';
+
+import { useLanguage } from '@/hooks/useLanguage';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import type { GameDto, GameManagementDto } from '@/server/application/dto/GameDto';
@@ -21,6 +24,8 @@ export interface GameCardProps {
  * Supports both player view and management view
  */
 export function GameCard({ game, managementView = false, onClick }: GameCardProps) {
+  const { t } = useLanguage();
+
   const isManagementDto = (g: GameDto | GameManagementDto): g is GameManagementDto => {
     return 'status' in g;
   };
@@ -29,11 +34,11 @@ export function GameCard({ game, managementView = false, onClick }: GameCardProp
     status: string
   ): 'default' | 'primary' | 'success' | 'warning' | 'danger' => {
     switch (status) {
-      case '準備中':
+      case t('game.status.preparing'):
         return 'warning';
-      case '出題中':
+      case t('game.status.active'):
         return 'success';
-      case '締切':
+      case t('game.status.closed'):
         return 'default';
       default:
         return 'default';
@@ -67,20 +72,20 @@ export function GameCard({ game, managementView = false, onClick }: GameCardProp
         {managementView && managementGame ? (
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">参加者:</span>
+              <span className="text-gray-600">{t('game.participants')}:</span>
               <span className="font-medium">
                 {managementGame.currentPlayers}/{managementGame.maxPlayers}
               </span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">残り枠:</span>
+              <span className="text-gray-600">{t('game.availableSlots')}:</span>
               <span className="font-medium text-blue-600">{game.availableSlots}人</span>
             </div>
           </div>
         ) : (
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-600">残り枠:</span>
+              <span className="text-sm text-gray-600">{t('game.availableSlots')}:</span>
               <span className="text-lg font-bold text-blue-600">{game.availableSlots}</span>
               <span className="text-sm text-gray-600">人</span>
             </div>
@@ -89,7 +94,7 @@ export function GameCard({ game, managementView = false, onClick }: GameCardProp
               type="button"
               className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
-              参加する
+              {t('game.join')}
             </button>
           </div>
         )}

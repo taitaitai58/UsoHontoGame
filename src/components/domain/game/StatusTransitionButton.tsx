@@ -10,6 +10,7 @@ import { useRef, useState } from 'react';
 import { closeGameAction, startGameAction } from '@/app/actions/game';
 import { useAccessibility } from '@/components/ui/AccessibilityProvider';
 import { animationSequences } from '@/lib/animations';
+import { useLanguage } from '@/hooks/useLanguage';
 import type { GameStatusValue } from '@/server/domain/value-objects/GameStatus';
 
 export interface StatusTransitionButtonProps {
@@ -33,6 +34,7 @@ export function StatusTransitionButton({
   onError,
   className = '',
 }: StatusTransitionButtonProps) {
+  const { t } = useLanguage();
   const [isLoading, setIsLoading] = useState(false);
   const [animationState, setAnimationState] = useState<'idle' | 'success' | 'error'>('idle');
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -58,10 +60,10 @@ export function StatusTransitionButton({
         }
 
         // Announce status change to screen readers
-        announceStatusChange('準備中', '出題中');
-        announceSuccess('ゲームが正常に開始されました');
+        announceStatusChange(t('game.status.preparing'), t('game.status.active'));
+        announceSuccess(t('status.messages.gameStarted'));
 
-        onSuccess?.('出題中');
+        onSuccess?.(t('game.status.active') as GameStatusValue);
       } else {
         // Error animation and feedback
         setAnimationState('error');
@@ -69,7 +71,7 @@ export function StatusTransitionButton({
           await animationSequences.buttonError(buttonRef.current);
         }
 
-        const errorMessage = result.errors._form?.[0] || 'ゲームの開始に失敗しました';
+        const errorMessage = result.errors._form?.[0] || t('action.game.start.error');
         announceError(errorMessage);
         onError?.(errorMessage);
       }
@@ -80,8 +82,8 @@ export function StatusTransitionButton({
         await animationSequences.buttonError(buttonRef.current);
       }
 
-      const errorMessage = error instanceof Error ? error.message : 'ゲームの開始に失敗しました';
-      announceError(`ネットワークエラー: ${errorMessage}`);
+      const errorMessage = error instanceof Error ? error.message : t('action.game.start.error');
+      announceError(`${t('errors.networkError')}: ${errorMessage}`);
       onError?.(errorMessage);
     } finally {
       setIsLoading(false);
@@ -94,7 +96,7 @@ export function StatusTransitionButton({
     if (isLoading) return;
 
     // Show confirmation dialog
-    const confirmed = window.confirm('本当にゲームを締切しますか？');
+    const confirmed = window.confirm(t('action.game.close.confirm'));
     if (!confirmed) return;
 
     setIsLoading(true);
@@ -115,10 +117,10 @@ export function StatusTransitionButton({
         }
 
         // Announce status change to screen readers
-        announceStatusChange('出題中', '締切');
-        announceSuccess('ゲームが正常に締切されました');
+        announceStatusChange(t('game.status.active'), t('game.status.closed'));
+        announceSuccess(t('status.messages.gameClosed'));
 
-        onSuccess?.('締切');
+        onSuccess?.(t('game.status.closed') as GameStatusValue);
       } else {
         // Error animation and feedback
         setAnimationState('error');
@@ -126,7 +128,7 @@ export function StatusTransitionButton({
           await animationSequences.buttonError(buttonRef.current);
         }
 
-        const errorMessage = result.errors._form?.[0] || 'ゲームの締切に失敗しました';
+        const errorMessage = result.errors._form?.[0] || t('action.game.close.error');
         announceError(errorMessage);
         onError?.(errorMessage);
       }
@@ -137,8 +139,8 @@ export function StatusTransitionButton({
         await animationSequences.buttonError(buttonRef.current);
       }
 
-      const errorMessage = error instanceof Error ? error.message : 'ゲームの締切に失敗しました';
-      announceError(`ネットワークエラー: ${errorMessage}`);
+      const errorMessage = error instanceof Error ? error.message : t('action.game.close.error');
+      announceError(`${t('errors.networkError')}: ${errorMessage}`);
       onError?.(errorMessage);
     } finally {
       setIsLoading(false);
@@ -148,11 +150,11 @@ export function StatusTransitionButton({
   };
 
   // Don't render anything for closed games
-  if (currentStatus === '締切') {
+  if (currentStatus === t('game.status.closed')) {
     return null;
   }
 
-  if (currentStatus === '準備中') {
+  if (currentStatus === t('game.status.preparing')) {
     const getButtonClasses = () => {
       const baseClasses =
         'inline-flex items-center px-4 py-2 text-sm font-medium text-white border border-transparent rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300';
@@ -173,7 +175,7 @@ export function StatusTransitionButton({
         onClick={handleStartGame}
         disabled={isLoading}
         className={getButtonClasses()}
-        aria-label="ゲームを開始する"
+        aria-label={t('status.transition.preparing.toActive')}
         aria-disabled={isLoading}
         aria-live="polite"
         aria-describedby={isLoading ? 'loading-status' : undefined}
@@ -186,7 +188,7 @@ export function StatusTransitionButton({
               fill="none"
               viewBox="0 0 24 24"
               role="img"
-              aria-label="読み込み中"
+              aria-label={t('common.loading')}
             >
               <circle
                 className="opacity-25"
@@ -202,7 +204,7 @@ export function StatusTransitionButton({
                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
               ></path>
             </svg>
-            <span id="loading-status">開始中...</span>
+            <span id="loading-status">{t('status.labels.starting')}</span>
           </>
         ) : animationState === 'success' ? (
           <>
@@ -211,7 +213,7 @@ export function StatusTransitionButton({
               fill="currentColor"
               viewBox="0 0 20 20"
               role="img"
-              aria-label="成功"
+              aria-label={t('status.labels.success')}
             >
               <path
                 fillRule="evenodd"
@@ -219,7 +221,7 @@ export function StatusTransitionButton({
                 clipRule="evenodd"
               />
             </svg>
-            成功!
+            {t('messages.success')}
           </>
         ) : animationState === 'error' ? (
           <>
@@ -228,7 +230,7 @@ export function StatusTransitionButton({
               fill="currentColor"
               viewBox="0 0 20 20"
               role="img"
-              aria-label="エラー"
+              aria-label={t('status.labels.error')}
             >
               <path
                 fillRule="evenodd"
@@ -236,16 +238,16 @@ export function StatusTransitionButton({
                 clipRule="evenodd"
               />
             </svg>
-            エラー
+            {t('status.labels.error')}
           </>
         ) : (
-          'ゲームを開始'
+          t('status.transition.preparing.toActive')
         )}
       </button>
     );
   }
 
-  if (currentStatus === '出題中') {
+  if (currentStatus === t('game.status.active')) {
     const getButtonClasses = () => {
       const baseClasses =
         'inline-flex items-center px-4 py-2 text-sm font-medium text-white border border-transparent rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300';
@@ -266,7 +268,7 @@ export function StatusTransitionButton({
         onClick={handleCloseGame}
         disabled={isLoading}
         className={getButtonClasses()}
-        aria-label="ゲームを締切する"
+        aria-label={t('status.transition.active.toClosed')}
         aria-disabled={isLoading}
         aria-live="polite"
         aria-describedby={isLoading ? 'loading-status-close' : undefined}
@@ -279,7 +281,7 @@ export function StatusTransitionButton({
               fill="none"
               viewBox="0 0 24 24"
               role="img"
-              aria-label="読み込み中"
+              aria-label={t('common.loading')}
             >
               <circle
                 className="opacity-25"
@@ -295,7 +297,7 @@ export function StatusTransitionButton({
                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
               ></path>
             </svg>
-            <span id="loading-status-close">締切中...</span>
+            <span id="loading-status-close">{t('status.labels.closing')}</span>
           </>
         ) : animationState === 'success' ? (
           <>
@@ -304,7 +306,7 @@ export function StatusTransitionButton({
               fill="currentColor"
               viewBox="0 0 20 20"
               role="img"
-              aria-label="成功"
+              aria-label={t('status.labels.success')}
             >
               <path
                 fillRule="evenodd"
@@ -312,7 +314,7 @@ export function StatusTransitionButton({
                 clipRule="evenodd"
               />
             </svg>
-            成功!
+            {t('messages.success')}
           </>
         ) : animationState === 'error' ? (
           <>
@@ -321,7 +323,7 @@ export function StatusTransitionButton({
               fill="currentColor"
               viewBox="0 0 20 20"
               role="img"
-              aria-label="エラー"
+              aria-label={t('status.labels.error')}
             >
               <path
                 fillRule="evenodd"
@@ -329,10 +331,10 @@ export function StatusTransitionButton({
                 clipRule="evenodd"
               />
             </svg>
-            エラー
+            {t('status.labels.error')}
           </>
         ) : (
-          'ゲームを締切'
+          t('status.transition.active.toClosed')
         )}
       </button>
     );
@@ -352,6 +354,7 @@ export function StatusTransitionButtonCompact({
   onError,
   className = '',
 }: StatusTransitionButtonProps) {
+  const { t } = useLanguage();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleStartGame = async () => {
@@ -365,14 +368,14 @@ export function StatusTransitionButtonCompact({
       const result = await startGameAction(formData);
 
       if (result.success) {
-        onSuccess?.('出題中');
+        onSuccess?.(t('game.status.active') as GameStatusValue);
       } else {
-        const errorMessage = result.errors._form?.[0] || 'ゲームの開始に失敗しました';
+        const errorMessage = result.errors._form?.[0] || t('action.game.start.error');
         alert(errorMessage);
         onError?.(errorMessage);
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'ゲームの開始に失敗しました';
+      const errorMessage = error instanceof Error ? error.message : t('action.game.start.error');
       alert(errorMessage);
       onError?.(errorMessage);
     } finally {
@@ -383,7 +386,7 @@ export function StatusTransitionButtonCompact({
   const handleCloseGame = async () => {
     if (isLoading) return;
 
-    const confirmed = window.confirm('本当にゲームを締切しますか？');
+    const confirmed = window.confirm(t('action.game.close.confirm'));
     if (!confirmed) return;
 
     setIsLoading(true);
@@ -395,14 +398,14 @@ export function StatusTransitionButtonCompact({
       const result = await closeGameAction(formData);
 
       if (result.success) {
-        onSuccess?.('締切');
+        onSuccess?.(t('game.status.closed') as GameStatusValue);
       } else {
-        const errorMessage = result.errors._form?.[0] || 'ゲームの締切に失敗しました';
+        const errorMessage = result.errors._form?.[0] || t('action.game.close.error');
         alert(errorMessage);
         onError?.(errorMessage);
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'ゲームの締切に失敗しました';
+      const errorMessage = error instanceof Error ? error.message : t('action.game.close.error');
       alert(errorMessage);
       onError?.(errorMessage);
     } finally {
@@ -410,36 +413,36 @@ export function StatusTransitionButtonCompact({
     }
   };
 
-  if (currentStatus === '締切') {
+  if (currentStatus === t('game.status.closed')) {
     return null;
   }
 
-  if (currentStatus === '準備中') {
+  if (currentStatus === t('game.status.preparing')) {
     return (
       <button
         type="button"
         onClick={handleStartGame}
         disabled={isLoading}
         className={`inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-green-600 border border-transparent rounded hover:bg-green-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
-        aria-label="ゲームを開始する"
+        aria-label={t('status.transition.preparing.toActive')}
         aria-disabled={isLoading}
       >
-        {isLoading ? '開始中...' : '開始'}
+        {isLoading ? t('status.labels.starting') : t('game.startGame')}
       </button>
     );
   }
 
-  if (currentStatus === '出題中') {
+  if (currentStatus === t('game.status.active')) {
     return (
       <button
         type="button"
         onClick={handleCloseGame}
         disabled={isLoading}
         className={`inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-red-600 border border-transparent rounded hover:bg-red-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
-        aria-label="ゲームを締切する"
+        aria-label={t('status.transition.active.toClosed')}
         aria-disabled={isLoading}
       >
-        {isLoading ? '締切中...' : '締切'}
+        {isLoading ? t('status.labels.closing') : t('game.endGame')}
       </button>
     );
   }

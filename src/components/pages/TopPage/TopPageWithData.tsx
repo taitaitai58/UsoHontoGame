@@ -9,6 +9,7 @@
 
 'use client';
 
+import { useLanguage } from '@/hooks/useLanguage';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useActiveGames } from './hooks/useActiveGames';
 import { TopPage } from './index';
@@ -25,6 +26,7 @@ export interface TopPageWithDataProps {
  * Displays loading state on initial load, then uses background refresh
  */
 export function TopPageWithData({ nickname, currentSessionId }: TopPageWithDataProps) {
+  const { t } = useLanguage();
   const { games, isLoading, isFetching, error, refetch } = useActiveGames();
 
   // Show loading skeleton only on initial load
@@ -33,10 +35,12 @@ export function TopPageWithData({ nickname, currentSessionId }: TopPageWithDataP
       <div className="min-h-screen bg-gray-50 p-8">
         <div className="mx-auto max-w-7xl">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">ようこそ、{nickname}さん!</h1>
+            <h1 className="text-3xl font-bold text-gray-900">
+              {t('session.welcome')}, {nickname}!
+            </h1>
           </div>
           <div className="mb-6">
-            <h2 className="text-2xl font-semibold text-gray-800">出題中のゲーム</h2>
+            <h2 className="text-2xl font-semibold text-gray-800">{t('game.activeGames')}</h2>
           </div>
           {/* Loading skeleton */}
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -61,18 +65,20 @@ export function TopPageWithData({ nickname, currentSessionId }: TopPageWithDataP
       <div className="min-h-screen bg-gray-50 p-8">
         <div className="mx-auto max-w-7xl">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">ようこそ、{nickname}さん!</h1>
+            <h1 className="text-3xl font-bold text-gray-900">
+              {t('session.welcome')}, {nickname}!
+            </h1>
           </div>
           <EmptyState
-            message="ゲームの読み込みに失敗しました"
-            subMessage="もう一度お試しください"
+            message={t('action.game.fetch.error')}
+            subMessage={t('errors.unexpectedError')}
             action={
               <button
                 type="button"
                 onClick={() => refetch()}
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
               >
-                再試行
+                {t('status.labels.retry')}
               </button>
             }
           />
@@ -90,9 +96,9 @@ export function TopPageWithData({ nickname, currentSessionId }: TopPageWithDataP
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
           viewBox="0 0 24 24"
-          aria-label="更新中"
+          aria-label={t('status.labels.updating')}
         >
-          <title>更新中</title>
+          <title>{t('status.labels.updating')}</title>
           <circle
             className="opacity-25"
             cx="12"
@@ -107,7 +113,7 @@ export function TopPageWithData({ nickname, currentSessionId }: TopPageWithDataP
             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
           />
         </svg>
-        <span className="text-sm">更新中...</span>
+        <span className="text-sm">{t('results.updating')}</span>
       </div>
     </div>
   );

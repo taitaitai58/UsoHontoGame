@@ -6,6 +6,7 @@
 
 import { useEffect, useRef } from 'react';
 import { usePresenterWithEpisodesForm } from '@/hooks/usePresenterWithEpisodesForm';
+import { useLanguage } from '@/hooks/useLanguage';
 
 import type { PresenterWithLieDto } from '@/server/application/dto/PresenterWithLieDto';
 
@@ -18,6 +19,7 @@ const NICKNAME_MAX = 50;
 const EPISODE_MAX = 1000;
 
 export function PresenterWithEpisodesForm({ gameId, onSuccess }: PresenterWithEpisodesFormProps) {
+  const { t } = useLanguage();
   const {
     formState,
     isSubmitting,
@@ -90,14 +92,14 @@ export function PresenterWithEpisodesForm({ gameId, onSuccess }: PresenterWithEp
         {/* Nickname Field */}
         <div>
           <label htmlFor="nickname" className="block text-sm font-medium text-gray-700 mb-2">
-            ニックネーム <span className="text-red-600">*</span>
+            {t('form.presenter.nickname.label')} <span className="text-red-600">*</span>
           </label>
           <input
             id="nickname"
             type="text"
             value={formState.nickname}
             onChange={(e) => updateNickname(e.target.value)}
-            placeholder="例：田中太郎"
+            placeholder={t('form.presenter.nickname.example')}
             maxLength={NICKNAME_MAX}
             className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
               errors?.nickname ? 'border-red-500' : 'border-gray-300'
@@ -107,14 +109,14 @@ export function PresenterWithEpisodesForm({ gameId, onSuccess }: PresenterWithEp
           <div className="mt-2 flex justify-between">
             {errors?.nickname && <p className="text-sm text-red-600">{errors.nickname[0]}</p>}
             <span className={`text-xs ${nicknameCountColor} ml-auto`}>
-              {nicknameCharCount}/{NICKNAME_MAX}文字
+              {nicknameCharCount}/{NICKNAME_MAX}
             </span>
           </div>
         </div>
 
         {/* Episodes Section */}
         <div className="space-y-6 border-t pt-6">
-          <h3 className="text-lg font-semibold text-gray-900">エピソード（3つ選択）</h3>
+          <h3 className="text-lg font-semibold text-gray-900">{t('episode.selectThree')}</h3>
 
           {formState.episodes.map((episode, index) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: Fixed 3-episode form with stable order
@@ -122,7 +124,7 @@ export function PresenterWithEpisodesForm({ gameId, onSuccess }: PresenterWithEp
               {/* Episode Number */}
               <div className="mb-4">
                 <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 text-sm font-medium rounded">
-                  エピソード {index + 1}
+                  {t('game.episode')} {index + 1}
                 </span>
               </div>
 
@@ -132,13 +134,13 @@ export function PresenterWithEpisodesForm({ gameId, onSuccess }: PresenterWithEp
                   htmlFor={`episode-${index}`}
                   className="block text-sm font-medium text-gray-700 mb-2"
                 >
-                  内容 <span className="text-red-600">*</span>
+                  {t('form.episode.content.label')} <span className="text-red-600">*</span>
                 </label>
                 <textarea
                   id={`episode-${index}`}
                   value={episode.text}
                   onChange={(e) => updateEpisodeText(index as 0 | 1 | 2, e.target.value)}
-                  placeholder={`エピソード${index + 1}の内容を入力してください`}
+                  placeholder={t('form.episode.content.placeholder')}
                   maxLength={EPISODE_MAX}
                   rows={3}
                   className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none ${
@@ -151,7 +153,7 @@ export function PresenterWithEpisodesForm({ gameId, onSuccess }: PresenterWithEp
                     <p className="text-sm text-red-600">{errors.episodes[0]}</p>
                   )}
                   <span className={`text-xs ${getEpisodeCountColor(index as 0 | 1 | 2)} ml-auto`}>
-                    {getEpisodeCharCount(index as 0 | 1 | 2)}/{EPISODE_MAX}文字
+                    {getEpisodeCharCount(index as 0 | 1 | 2)}/{EPISODE_MAX}
                   </span>
                 </div>
               </div>
@@ -172,7 +174,7 @@ export function PresenterWithEpisodesForm({ gameId, onSuccess }: PresenterWithEp
                   htmlFor={`is-lie-${index}`}
                   className="ml-2 text-sm text-gray-700 cursor-pointer"
                 >
-                  このエピソードをウソにする
+                  {t('form.episode.isLie.label')}
                 </label>
               </div>
             </div>
@@ -193,7 +195,7 @@ export function PresenterWithEpisodesForm({ gameId, onSuccess }: PresenterWithEp
             disabled={isSubmitting}
             className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium transition-colors"
           >
-            {isSubmitting ? '送信中...' : '登録'}
+            {isSubmitting ? t('common.loading') : t('presenter.add')}
           </button>
           <button
             type="button"
@@ -201,7 +203,7 @@ export function PresenterWithEpisodesForm({ gameId, onSuccess }: PresenterWithEp
             disabled={isSubmitting}
             className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed font-medium transition-colors"
           >
-            クリア
+            {t('common.cancel')}
           </button>
         </div>
       </form>

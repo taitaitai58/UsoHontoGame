@@ -6,6 +6,7 @@
  * Implements all business rules for status transitions as defined in data-model.md.
  */
 
+import { t } from '@/lib/i18n/server';
 import type { Game } from '../../../domain/entities/Game';
 import { NotFoundError } from '../../../domain/errors/NotFoundError';
 import {
@@ -49,7 +50,7 @@ export class ValidateStatusTransition {
     // Find the game
     const game = await this.gameRepository.findById(new GameId(gameId));
     if (!game) {
-      throw new NotFoundError('ゲームが見つかりません');
+      throw new NotFoundError(await t('game.gameNotFound'));
     }
 
     const currentStatus = game.status.value;
@@ -64,7 +65,7 @@ export class ValidateStatusTransition {
     if (game.creatorId !== sessionId) {
       errors.push({
         code: 'UNAUTHORIZED',
-        message: 'このゲームを変更する権限がありません',
+        message: await t('action.session.unauthorized'),
       });
     }
 
@@ -72,7 +73,7 @@ export class ValidateStatusTransition {
     if (game.status.isClosed()) {
       errors.push({
         code: 'GAME_ALREADY_CLOSED',
-        message: '締切状態のゲームは変更できません',
+        message: await t('status.messages.cannotEdit'),
       });
     }
 
@@ -115,7 +116,7 @@ export class ValidateStatusTransition {
       // Invalid transition path
       errors.push({
         code: 'INVALID_STATUS_TRANSITION',
-        message: '無効なステータス遷移です',
+        message: await t('errors.invalid'),
       });
     }
   }
@@ -138,7 +139,7 @@ export class ValidateStatusTransition {
     if (presenters.length === 0) {
       errors.push({
         code: 'NO_PRESENTERS',
-        message: 'ゲームを開始するには出題者が必要です',
+        message: await t('presenter.noPresenter'),
       });
       return; // No point checking episodes if no presenters
     }

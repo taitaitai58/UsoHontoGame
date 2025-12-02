@@ -4,6 +4,7 @@
 // Feature: 001-lie-detection-answers
 // Server Actions with Zod validation for answer submission
 
+import { t } from '@/lib/i18n/server';
 import type { GetGameForAnswersResponse } from '@/server/application/use-cases/answers/GetGameForAnswers';
 import { GetGameForAnswers } from '@/server/application/use-cases/answers/GetGameForAnswers';
 import { SubmitAnswer } from '@/server/application/use-cases/answers/SubmitAnswer';
@@ -61,7 +62,7 @@ export async function submitAnswerAction(
     return {
       success: false,
       errors: {
-        _form: ['セッションが見つかりません。'],
+        _form: [await t('action.session.notFound')],
       },
     };
   }
@@ -77,7 +78,7 @@ export async function submitAnswerAction(
     return {
       success: false,
       errors: {
-        selections: ['回答データの形式が不正です'],
+        selections: [await t('errors.invalid')],
       },
     };
   }

@@ -2,6 +2,9 @@
 // Feature: 002-game-preparation
 // List component for displaying multiple games
 
+'use client';
+
+import { useLanguage } from '@/hooks/useLanguage';
 import type { GameDto, GameManagementDto } from '@/server/application/dto/GameDto';
 import { GameCard } from './GameCard';
 
@@ -20,6 +23,8 @@ export interface GameListProps {
  * Supports both player and management views
  */
 export function GameList({ games, managementView = false, onGameClick }: GameListProps) {
+  const { t } = useLanguage();
+
   // Empty state
   if (games.length === 0) {
     return (
@@ -38,11 +43,11 @@ export function GameList({ games, managementView = false, onGameClick }: GameLis
             d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
           />
         </svg>
-        <h3 className="mt-2 text-sm font-medium text-gray-900">ゲームがありません</h3>
+        <h3 className="mt-2 text-sm font-medium text-gray-900">{t('emptyState.noGames')}</h3>
         <p className="mt-1 text-sm text-gray-500">
           {managementView
-            ? '新しいゲームを作成して始めましょう'
-            : '現在参加可能なゲームはありません'}
+            ? t('emptyState.createFirstGame')
+            : t('emptyState.noAvailableGames')}
         </p>
         {managementView && (
           <div className="mt-6">
@@ -64,7 +69,7 @@ export function GameList({ games, managementView = false, onGameClick }: GameLis
                   d="M12 4v16m8-8H4"
                 />
               </svg>
-              ゲームを作成
+              {t('game.createGame')}
             </a>
           </div>
         )}
@@ -77,7 +82,7 @@ export function GameList({ games, managementView = false, onGameClick }: GameLis
     <div>
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-900">
-          {managementView ? '作成したゲーム' : '参加可能なゲーム'}
+          {managementView ? t('game.createdGames') : t('game.availableGames')}
         </h2>
         <span className="text-sm text-gray-600">{games.length}件</span>
       </div>

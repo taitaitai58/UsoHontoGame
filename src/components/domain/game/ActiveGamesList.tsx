@@ -7,6 +7,9 @@
  * Handles layout and spacing for multiple game cards
  */
 
+'use client';
+
+import { useLanguage } from '@/hooks/useLanguage';
 import type { ActiveGameListItem } from '@/types/game';
 import { ActiveGameCard } from './ActiveGameCard';
 
@@ -22,6 +25,8 @@ export interface ActiveGamesListProps {
  * Renders a grid of game cards with responsive layout
  */
 export function ActiveGamesList({ games, currentSessionId }: ActiveGamesListProps) {
+  const { t } = useLanguage();
+
   if (games.length === 0) {
     return null;
   }
@@ -29,7 +34,7 @@ export function ActiveGamesList({ games, currentSessionId }: ActiveGamesListProp
   return (
     <ul
       className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
-      aria-label="出題中のゲーム一覧"
+      aria-label={t('navigation.activeGames')}
     >
       {games.map((game) => (
         <li key={game.id}>

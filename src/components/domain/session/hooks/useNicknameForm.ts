@@ -4,6 +4,7 @@
 // Custom hook for nickname form logic (follows constitution Principle III)
 
 import { useState, useTransition } from 'react';
+import { useLanguage } from '@/hooks/useLanguage';
 import { setNicknameAction } from '@/app/actions/session';
 
 export interface UseNicknameFormReturn {
@@ -19,6 +20,7 @@ export interface UseNicknameFormReturn {
  * Separates business logic from presentation (constitution Principle III)
  */
 export function useNicknameForm(): UseNicknameFormReturn {
+  const { t } = useLanguage();
   const [nickname, setNickname] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -34,7 +36,7 @@ export function useNicknameForm(): UseNicknameFormReturn {
   const handleSubmit = async () => {
     // Client-side validation
     if (!nickname.trim()) {
-      setError('ニックネームを入力してください');
+      setError(t('validation.nickname.empty'));
       return;
     }
 
