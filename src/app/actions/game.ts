@@ -6,6 +6,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { t } from '@/lib/i18n/server';
 import type { GameDetailDto } from '@/server/application/dto/GameDetailDto';
 import type { CreateGameOutput, GameManagementDto } from '@/server/application/dto/GameDto';
 import { CloseGame } from '@/server/application/use-cases/games/CloseGame';
@@ -40,7 +41,7 @@ async function getSessionIdOrError(): Promise<
     return {
       success: false,
       errors: {
-        _form: ['セッションが見つかりません。ニックネームを設定してください。'],
+        _form: [await t('action.session.notFound')],
       },
     };
   }
@@ -105,7 +106,7 @@ export async function createGameAction(
     return {
       success: false,
       errors: {
-        _form: [error instanceof Error ? error.message : 'ゲームの作成に失敗しました'],
+        _form: [error instanceof Error ? error.message : await t('action.game.create.error')],
       },
     };
   }
@@ -159,7 +160,7 @@ export async function startAcceptingAction(
       return {
         success: false,
         errors: {
-          _form: ['セッションが見つかりません。ログインし直してください。'],
+          _form: [await t('action.session.notFound')],
         },
       };
     }
@@ -183,7 +184,7 @@ export async function startAcceptingAction(
     return {
       success: false,
       errors: {
-        _form: [error instanceof Error ? error.message : 'ステータスの変更に失敗しました'],
+        _form: [error instanceof Error ? error.message : await t('action.game.start.error')],
       },
     };
   }
@@ -204,7 +205,7 @@ export async function getGamesAction(): Promise<
       return {
         success: false,
         errors: {
-          _form: ['セッションが見つかりません。ログインし直してください。'],
+          _form: [await t('action.session.notFound')],
         },
       };
     }
@@ -227,7 +228,7 @@ export async function getGamesAction(): Promise<
     return {
       success: false,
       errors: {
-        _form: [error instanceof Error ? error.message : 'ゲーム一覧の取得に失敗しました'],
+        _form: [error instanceof Error ? error.message : await t('action.game.fetch.error')],
       },
     };
   }
@@ -251,7 +252,7 @@ export async function getGameDetailAction(
       return {
         success: false,
         errors: {
-          _form: ['セッションが見つかりません。ログインし直してください。'],
+          _form: [await t('action.session.notFound')],
         },
       };
     }
@@ -265,7 +266,7 @@ export async function getGameDetailAction(
       return {
         success: false,
         errors: {
-          _form: ['ゲームが見つかりません'],
+          _form: [await t('game.gameNotFound')],
         },
       };
     }
@@ -275,7 +276,7 @@ export async function getGameDetailAction(
       return {
         success: false,
         errors: {
-          _form: ['このゲームの編集権限がありません'],
+          _form: [await t('action.session.unauthorized')],
         },
       };
     }
@@ -302,7 +303,7 @@ export async function getGameDetailAction(
     return {
       success: false,
       errors: {
-        _form: [error instanceof Error ? error.message : 'ゲームの取得に失敗しました'],
+        _form: [error instanceof Error ? error.message : await t('action.game.fetch.error')],
       },
     };
   }
@@ -342,7 +343,7 @@ export async function updateGameAction(
       return {
         success: false,
         errors: {
-          _form: ['セッションが見つかりません。ログインし直してください。'],
+          _form: [await t('action.session.notFound')],
         },
       };
     }
@@ -362,7 +363,7 @@ export async function updateGameAction(
       return {
         success: false,
         errors: {
-          _form: ['ゲームの更新に失敗しました'],
+          _form: [await t('action.game.update.error')],
         },
       };
     }
@@ -380,7 +381,7 @@ export async function updateGameAction(
     return {
       success: false,
       errors: {
-        _form: [error instanceof Error ? error.message : 'ゲームの更新に失敗しました'],
+        _form: [error instanceof Error ? error.message : await t('action.game.update.error')],
       },
     };
   }
@@ -416,7 +417,7 @@ export async function deleteGameAction(
       return {
         success: false,
         errors: {
-          _form: ['セッションが見つかりません。ログインし直してください。'],
+          _form: [await t('action.session.notFound')],
         },
       };
     }
@@ -441,7 +442,7 @@ export async function deleteGameAction(
     return {
       success: false,
       errors: {
-        _form: [error instanceof Error ? error.message : 'ゲームの削除に失敗しました'],
+        _form: [error instanceof Error ? error.message : await t('action.game.delete.error')],
       },
     };
   }
@@ -516,7 +517,7 @@ export async function startGameAction(
     return {
       success: false,
       errors: {
-        _form: [error instanceof Error ? error.message : 'ゲームの開始に失敗しました'],
+        _form: [error instanceof Error ? error.message : await t('action.game.start.error')],
       },
     };
   }
@@ -593,7 +594,7 @@ export async function closeGameAction(
     return {
       success: false,
       errors: {
-        _form: [error instanceof Error ? error.message : 'ゲームの締切に失敗しました'],
+        _form: [error instanceof Error ? error.message : await t('action.game.close.error')],
       },
     };
   }

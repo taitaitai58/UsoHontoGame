@@ -1,6 +1,7 @@
 // Use Case: SubmitAnswer
 // Handles answer submission with validation, participation tracking, and upsert
 
+import { t } from '@/lib/i18n/server';
 import type { SubmitAnswerRequest } from '@/server/application/dto/requests/SubmitAnswerRequest';
 import { AnswerEntity } from '@/server/domain/entities/Answer';
 import { ParticipationEntity } from '@/server/domain/entities/Participation';
@@ -41,7 +42,7 @@ export class SubmitAnswer {
         success: false,
         error: {
           code: 'INVALID_SELECTIONS',
-          message: '回答が選択されていません',
+          message: await t('validation.answer.noSelections'),
         },
       };
     }
@@ -56,7 +57,7 @@ export class SubmitAnswer {
         success: false,
         error: {
           code: 'GAME_NOT_FOUND',
-          message: 'ゲームが見つかりません',
+          message: await t('game.gameNotFound'),
         },
       };
     }
@@ -68,7 +69,7 @@ export class SubmitAnswer {
         success: false,
         error: {
           code: 'GAME_NOT_FOUND',
-          message: 'ゲームが見つかりません',
+          message: await t('game.gameNotFound'),
         },
       };
     }
@@ -79,7 +80,7 @@ export class SubmitAnswer {
         success: false,
         error: {
           code: 'GAME_NOT_STARTED',
-          message: 'このゲームはまだ開始されていません',
+          message: await t('status.labels.preparing'),
         },
       };
     }
@@ -89,7 +90,7 @@ export class SubmitAnswer {
         success: false,
         error: {
           code: 'GAME_CLOSED',
-          message: 'このゲームは締め切られました',
+          message: await t('status.labels.closed'),
         },
       };
     }
@@ -105,7 +106,7 @@ export class SubmitAnswer {
           success: false,
           error: {
             code: 'INCOMPLETE_SELECTIONS',
-            message: 'すべての出題者の回答を選択してください',
+            message: await t('validation.answer.incomplete'),
           },
         };
       }
@@ -126,7 +127,7 @@ export class SubmitAnswer {
           success: false,
           error: {
             code: 'PARTICIPANT_LIMIT_REACHED',
-            message: '参加人数が上限に達しました',
+            message: await t('game.playerLimit'),
           },
         };
       }
@@ -179,7 +180,7 @@ export class SubmitAnswer {
       success: true,
       data: {
         answerId: answer.id,
-        message: '回答を送信しました',
+        message: await t('answer.answerSubmitted'),
       },
     };
   }

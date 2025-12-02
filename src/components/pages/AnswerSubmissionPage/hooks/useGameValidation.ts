@@ -7,6 +7,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useLanguage } from '@/hooks/useLanguage';
 import { getGameForAnswersAction } from '@/app/actions/answers';
 import type { GetGameForAnswersResponse } from '@/server/application/use-cases/answers/GetGameForAnswers';
 
@@ -44,6 +45,7 @@ export function useGameValidation({
   onSuccess,
   onError,
 }: UseGameValidationOptions): UseGameValidationReturn {
+  const { t } = useLanguage();
   const [isLoading, setIsLoading] = useState(true);
   const [game, setGame] = useState<GameData | null>(null);
   const [error, setError] = useState<ValidationError | null>(null);
@@ -69,14 +71,14 @@ export function useGameValidation({
     } catch (_err) {
       const unknownError = {
         code: 'UNKNOWN_ERROR',
-        message: '予期しないエラーが発生しました',
+        message: t('errors.unexpectedError'),
       };
       setError(unknownError);
       onError?.(unknownError);
     } finally {
       setIsLoading(false);
     }
-  }, [gameId, onSuccess, onError]);
+  }, [gameId, onSuccess, onError, t]);
 
   // Validate on mount
   useEffect(() => {

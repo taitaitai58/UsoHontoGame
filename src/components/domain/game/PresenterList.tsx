@@ -6,6 +6,7 @@
 
 import { useState } from 'react';
 import { removePresenterAction } from '@/app/actions/presenter';
+import { useLanguage } from '@/hooks/useLanguage';
 import type { PresenterWithLieDto } from '@/server/application/dto/PresenterWithLieDto';
 
 export interface PresenterListProps {
@@ -30,10 +31,11 @@ export function PresenterList({
   onPresenterRemoved,
   onPresenterSelected,
 }: PresenterListProps) {
+  const { t } = useLanguage();
   const [removingId, setRemovingId] = useState<string | null>(null);
 
   const handleRemove = async (presenterId: string) => {
-    if (!confirm('このプレゼンターを削除しますか？')) {
+    if (!confirm(t('presenter.confirmDelete'))) {
       return;
     }
 
@@ -49,11 +51,11 @@ export function PresenterList({
       if (result.success) {
         onPresenterRemoved?.();
       } else {
-        alert(result.errors._form?.[0] || 'プレゼンターの削除に失敗しました');
+        alert(result.errors._form?.[0] || t('action.presenter.delete.error'));
       }
     } catch (error) {
       console.error('Failed to remove presenter:', error);
-      alert('プレゼンターの削除に失敗しました');
+      alert(t('action.presenter.delete.error'));
     } finally {
       setRemovingId(null);
     }
@@ -62,7 +64,7 @@ export function PresenterList({
   if (presenters.length === 0) {
     return (
       <div className="rounded-lg border border-gray-200 bg-gray-50 p-8 text-center">
-        <p className="text-gray-600">プレゼンターが登録されていません</p>
+        <p className="text-gray-600">{t('presenter.noPresenter')}</p>
       </div>
     );
   }
@@ -82,7 +84,7 @@ export function PresenterList({
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">{presenter.nickname}</h3>
                 <p className="text-sm text-gray-600">
-                  エピソード: {presenter.episodes.length}/3
+                  {t('game.episodes')}: {presenter.episodes.length}/3
                   {isComplete && hasLie ? (
                     <span className="ml-2 text-green-600">✓ 完了</span>
                   ) : (
@@ -98,7 +100,7 @@ export function PresenterList({
                     onClick={() => onPresenterSelected?.(presenter.id)}
                     className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
                   >
-                    エピソード追加
+                    {t('presenter.addEpisode')}
                   </button>
                 )}
                 <button
@@ -123,11 +125,11 @@ export function PresenterList({
                   >
                     <div className="mb-1 flex items-center justify-between">
                       <span className="text-sm font-medium text-gray-700">
-                        エピソード {index + 1}
+                        {t('game.episode')} {index + 1}
                       </span>
                       {episode.isLie && (
                         <span className="rounded bg-red-600 px-2 py-1 text-xs font-bold text-white">
-                          ウソ
+                          {t('game.lie')}
                         </span>
                       )}
                     </div>

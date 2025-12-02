@@ -27,7 +27,7 @@ export function GameStatusBadge({
 }: GameStatusBadgeProps) {
   const [previousStatus, setPreviousStatus] = useState<GameStatusValue>(status);
   const [isHighlighted, setIsHighlighted] = useState(false);
-  const badgeRef = useRef<HTMLSpanElement>(null);
+  const badgeRef = useRef<HTMLOutputElement>(null);
   const { announceStatusChange } = useAccessibility();
 
   useEffect(() => {
@@ -104,7 +104,7 @@ export function GameStatusBadgeLarge({
 }: GameStatusBadgeProps) {
   const [previousStatus, setPreviousStatus] = useState<GameStatusValue>(status);
   const [isHighlighted, setIsHighlighted] = useState(false);
-  const badgeRef = useRef<HTMLSpanElement>(null);
+  const badgeRef = useRef<HTMLOutputElement>(null);
   const { announceStatusChange } = useAccessibility();
 
   useEffect(() => {

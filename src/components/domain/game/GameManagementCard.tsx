@@ -6,6 +6,7 @@
 
 import { useState } from 'react';
 import { closeGameAction, startAcceptingAction } from '@/app/actions/game';
+import { useLanguage } from '@/hooks/useLanguage';
 import { Badge } from '@/components/ui/Badge';
 import type { GameManagementDto } from '@/server/application/dto/GameDto';
 
@@ -22,6 +23,7 @@ export interface GameManagementCardProps {
  * Allows moderators to transition game status
  */
 export function GameManagementCard({ game, onStatusChange }: GameManagementCardProps) {
+  const { t } = useLanguage();
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,11 +31,11 @@ export function GameManagementCard({ game, onStatusChange }: GameManagementCardP
     status: string
   ): 'default' | 'primary' | 'success' | 'warning' | 'danger' => {
     switch (status) {
-      case '準備中':
+      case t('game.status.preparing'):
         return 'warning';
-      case '出題中':
+      case t('game.status.active'):
         return 'success';
-      case '締切':
+      case t('game.status.closed'):
         return 'default';
       default:
         return 'default';
@@ -41,7 +43,7 @@ export function GameManagementCard({ game, onStatusChange }: GameManagementCardP
   };
 
   const handleStartAccepting = async () => {
-    if (!confirm('ゲームを開始してもよろしいですか？')) {
+    if (!confirm(t('action.game.start.confirm'))) {
       return;
     }
 
@@ -57,18 +59,18 @@ export function GameManagementCard({ game, onStatusChange }: GameManagementCardP
       if (result.success) {
         onStatusChange?.();
       } else {
-        setError(result.errors._form?.[0] || 'ステータスの変更に失敗しました');
+        setError(result.errors._form?.[0] || t('action.game.start.error'));
       }
     } catch (err) {
       console.error('Failed to start accepting:', err);
-      setError('ステータスの変更に失敗しました');
+      setError(t('action.game.start.error'));
     } finally {
       setIsTransitioning(false);
     }
   };
 
   const handleClose = async () => {
-    if (!confirm('ゲームを締め切ってもよろしいですか？')) {
+    if (!confirm(t('action.game.close.confirm'))) {
       return;
     }
 
@@ -84,11 +86,11 @@ export function GameManagementCard({ game, onStatusChange }: GameManagementCardP
       if (result.success) {
         onStatusChange?.();
       } else {
-        setError(result.errors._form?.[0] || '締切に失敗しました');
+        setError(result.errors._form?.[0] || t('action.game.close.error'));
       }
     } catch (err) {
       console.error('Failed to close game:', err);
-      setError('締切に失敗しました');
+      setError(t('action.game.close.error'));
     } finally {
       setIsTransitioning(false);
     }
@@ -105,13 +107,13 @@ export function GameManagementCard({ game, onStatusChange }: GameManagementCardP
       {/* Game Info */}
       <div className="mb-4 space-y-2">
         <div className="flex items-center justify-between text-sm">
-          <span className="text-gray-600">参加者:</span>
+          <span className="text-gray-600">{t('game.participants')}:</span>
           <span className="font-medium">
             {game.currentPlayers}/{game.maxPlayers}
           </span>
         </div>
         <div className="flex items-center justify-between text-sm">
-          <span className="text-gray-600">残り枠:</span>
+          <span className="text-gray-600">{t('game.availableSlots')}:</span>
           <span className="font-medium text-blue-600">{game.availableSlots}人</span>
         </div>
       </div>
@@ -125,7 +127,7 @@ export function GameManagementCard({ game, onStatusChange }: GameManagementCardP
 
       {/* Action Buttons */}
       <div className="flex gap-2">
-        {game.status === '準備中' && (
+        {game.status === t('game.status.preparing') && (
           <>
             <button
               type="button"
@@ -133,31 +135,31 @@ export function GameManagementCard({ game, onStatusChange }: GameManagementCardP
               disabled={isTransitioning}
               className="flex-1 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {isTransitioning ? '処理中...' : '出題開始'}
+              {isTransitioning ? t('common.loading') : t('game.startAccepting')}
             </button>
             <a
               href={`/games/${game.id}/presenters`}
               className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-center text-sm font-medium text-white transition-colors hover:bg-blue-700"
             >
-              プレゼンター管理
+              {t('presenter.management')}
             </a>
           </>
         )}
 
-        {game.status === '出題中' && (
+        {game.status === t('game.status.active') && (
           <button
             type="button"
             onClick={handleClose}
             disabled={isTransitioning}
             className="flex-1 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isTransitioning ? '処理中...' : '締切'}
+            {isTransitioning ? t('common.loading') : t('status.transition.active.toClosed')}
           </button>
         )}
 
-        {game.status === '締切' && (
+        {game.status === t('game.status.closed') && (
           <div className="flex-1 text-center text-sm text-gray-500">
-            このゲームは締め切られました
+            {t('game.gameClosed')}
           </div>
         )}
       </div>

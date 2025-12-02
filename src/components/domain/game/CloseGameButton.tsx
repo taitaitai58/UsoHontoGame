@@ -7,6 +7,7 @@
 'use client';
 
 import { useCloseGame } from '@/components/pages/GameDetailPage/hooks/useCloseGame';
+import { useLanguage } from '@/hooks/useLanguage';
 
 export interface CloseGameButtonProps {
   gameId: string;
@@ -31,6 +32,7 @@ export function CloseGameButton({
   onClosed,
   className = '',
 }: CloseGameButtonProps) {
+  const { t } = useLanguage();
   const { closeGame, isClosing, error } = useCloseGame({
     gameId,
     onSuccess: () => {
@@ -42,8 +44,8 @@ export function CloseGameButton({
     },
   });
 
-  // Only show button when game is in '出題中' status
-  if (gameStatus !== '出題中') {
+  // Only show button when game is in 'active' status
+  if (gameStatus !== t('game.status.active')) {
     return null;
   }
 
@@ -63,10 +65,10 @@ export function CloseGameButton({
           }
           focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2
         `}
-        aria-label={isClosing ? '締切中' : '締切にする'}
+        aria-label={isClosing ? t('status.labels.closing') : t('status.transition.active.toClosed')}
         aria-busy={isClosing}
       >
-        {isClosing ? '締切中...' : '締切にする'}
+        {isClosing ? t('status.labels.closing') : t('status.transition.active.toClosed')}
       </button>
 
       {error && (

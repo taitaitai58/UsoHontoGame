@@ -7,6 +7,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
+import { useLanguage } from '@/hooks/useLanguage';
 import { closeGameAction } from '@/app/actions/game';
 
 export interface UseCloseGameOptions {
@@ -32,6 +33,7 @@ export function useCloseGame({
   onSuccess,
   onError,
 }: UseCloseGameOptions): UseCloseGameReturn {
+  const { t } = useLanguage();
   const [isClosing, setIsClosing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,9 +42,7 @@ export function useCloseGame({
     if (isClosing) return;
 
     // Show confirmation dialog
-    const confirmed = window.confirm(
-      'ゲームを締め切りますか？締め切り後は回答を受け付けなくなります。'
-    );
+    const confirmed = window.confirm(t('action.game.close.confirm'));
     if (!confirmed) return;
 
     // Clear previous error
@@ -61,19 +61,19 @@ export function useCloseGame({
         onSuccess?.();
       } else {
         // Server-side validation error
-        const errorMessage = result.errors?._form?.[0] || 'ゲームの締切に失敗しました';
+        const errorMessage = result.errors?._form?.[0] || t('action.game.close.error');
         setError(errorMessage);
         onError?.(errorMessage);
       }
     } catch (_err) {
       // Unexpected error (network, etc.)
-      const errorMessage = 'ゲームの締切に失敗しました';
+      const errorMessage = t('action.game.close.error');
       setError(errorMessage);
       onError?.(errorMessage);
     } finally {
       setIsClosing(false);
     }
-  }, [gameId, isClosing, onSuccess, onError]);
+  }, [gameId, isClosing, onSuccess, onError, t]);
 
   return {
     closeGame,

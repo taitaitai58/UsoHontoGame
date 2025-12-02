@@ -2,6 +2,9 @@
 // Feature: 006-results-dashboard, User Story 1
 // Displays list of participants and their response submission status
 
+'use client';
+
+import { useLanguage } from '@/hooks/useLanguage';
 import type { ResponseStatusListProps } from '@/components/pages/ResponseStatusPage/ResponseStatusPage.types';
 
 export default function ResponseStatusList({
@@ -10,17 +13,19 @@ export default function ResponseStatusList({
   submittedCount,
   allSubmitted,
 }: ResponseStatusListProps) {
+  const { t } = useLanguage();
+
   return (
     <div className="space-y-4">
       {/* Summary Section */}
       <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">回答状況</h2>
+          <h2 className="text-lg font-semibold text-gray-900">{t('results.responseStatus')}</h2>
           <div className="text-right">
             <p className="text-2xl font-bold text-blue-600">
               {submittedCount} / {totalParticipants}
             </p>
-            <p className="text-sm text-gray-600">名が回答済み</p>
+            <p className="text-sm text-gray-600">{t('results.submitted')}</p>
           </div>
         </div>
 
@@ -39,7 +44,7 @@ export default function ResponseStatusList({
         {/* All Submitted Message */}
         {allSubmitted && (
           <div className="mt-4 rounded-md bg-green-50 p-3 text-center">
-            <p className="font-semibold text-green-800">✓ 全員が回答を送信しました！</p>
+            <p className="font-semibold text-green-800">✓ {t('results.allSubmitted')}</p>
           </div>
         )}
       </div>
@@ -47,11 +52,11 @@ export default function ResponseStatusList({
       {/* Participant List */}
       <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
         <div className="border-b border-gray-200 px-4 py-3">
-          <h3 className="font-semibold text-gray-900">参加者一覧</h3>
+          <h3 className="font-semibold text-gray-900">{t('game.participantList')}</h3>
         </div>
         <ul className="divide-y divide-gray-200">
           {participants.length === 0 ? (
-            <li className="px-4 py-8 text-center text-gray-500">まだ回答がありません</li>
+            <li className="px-4 py-8 text-center text-gray-500">{t('results.noAnswers')}</li>
           ) : (
             participants.map((participant) => (
               <li
@@ -85,7 +90,7 @@ export default function ResponseStatusList({
                 )}
 
                 {/* Pending Status */}
-                {!participant.hasSubmitted && <span className="text-sm text-gray-500">未回答</span>}
+                {!participant.hasSubmitted && <span className="text-sm text-gray-500">{t('results.pending')}</span>}
               </li>
             ))
           )}

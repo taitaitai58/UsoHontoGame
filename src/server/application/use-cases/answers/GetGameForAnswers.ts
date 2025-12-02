@@ -1,6 +1,7 @@
 // Use Case: GetGameForAnswers
 // Fetches game data for answer submission screen (hides isLie)
 
+import { t } from '@/lib/i18n/server';
 import type { IGameRepository } from '@/server/domain/repositories/IGameRepository';
 import { GameId } from '@/server/domain/value-objects/GameId';
 
@@ -35,7 +36,7 @@ export class GetGameForAnswers {
         success: false,
         error: {
           code: 'INVALID_GAME_ID',
-          message: 'ゲームIDが無効です',
+          message: await t('errors.invalid'),
         },
       };
     }
@@ -50,7 +51,7 @@ export class GetGameForAnswers {
         success: false,
         error: {
           code: 'GAME_NOT_FOUND',
-          message: 'ゲームが見つかりません',
+          message: await t('game.gameNotFound'),
         },
       };
     }
@@ -62,7 +63,7 @@ export class GetGameForAnswers {
         success: false,
         error: {
           code: 'GAME_NOT_FOUND',
-          message: 'ゲームが見つかりません',
+          message: await t('game.gameNotFound'),
         },
       };
     }
@@ -73,7 +74,7 @@ export class GetGameForAnswers {
         success: false,
         error: {
           code: 'GAME_CLOSED',
-          message: 'このゲームは締め切られました',
+          message: await t('status.labels.closed'),
         },
       };
     }

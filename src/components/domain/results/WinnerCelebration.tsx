@@ -4,6 +4,7 @@
 
 'use client';
 
+import { useLanguage } from '@/hooks/useLanguage';
 import { Confetti } from '@/components/ui/Confetti';
 
 export interface WinnerCelebrationProps {
@@ -12,6 +13,8 @@ export interface WinnerCelebrationProps {
 }
 
 export default function WinnerCelebration({ winners, isActive }: WinnerCelebrationProps) {
+  const { t } = useLanguage();
+
   if (!isActive || winners.length === 0) return null;
 
   const isTie = winners.length > 1;
@@ -33,7 +36,7 @@ export default function WinnerCelebration({ winners, isActive }: WinnerCelebrati
 
           {/* Title */}
           <h2 className="mb-4 text-4xl font-bold text-yellow-900">
-            {isTie ? '🎉 同点優勝！ 🎉' : '🎉 優勝おめでとう！ 🎉'}
+            {isTie ? t('results.tieWinner') : t('results.congratulations')}
           </h2>
 
           {/* Winner Names */}
@@ -41,14 +44,14 @@ export default function WinnerCelebration({ winners, isActive }: WinnerCelebrati
             {winners.map((winner, _index) => (
               <div key={winner.nickname} className="rounded-lg bg-white/80 px-6 py-3 shadow-md">
                 <p className="text-2xl font-bold text-gray-900">{winner.nickname}</p>
-                <p className="text-lg text-yellow-700">{winner.score} 点</p>
+                <p className="text-lg text-yellow-700">{winner.score} {t('results.points')}</p>
               </div>
             ))}
           </div>
 
           {/* Celebration Text */}
           <p className="text-lg text-gray-700">
-            {isTie ? `${winners.length}名が同点で優勝しました！` : '見事、嘘を見抜きました！'}
+            {isTie ? t('results.tieMessage').replace('{count}', String(winners.length)) : t('results.detectSuccess')}
           </p>
         </div>
       </div>

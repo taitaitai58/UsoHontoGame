@@ -1,6 +1,6 @@
 # Frontend Architecture
 
-This document outlines the design patterns and architectural decisions for the CPM Prototype frontend built with Next.js 15 and React 19.
+This document outlines the design patterns and architectural decisions for the frontend built with Next.js 15 and React 19.
 
 ## Architecture Overview
 
@@ -90,7 +90,7 @@ export function TopPage(props: TopPageProps) {
 
   return (
     <div className="top-page">
-      <h1>CPM Prototype</h1>
+      <h1>Prototype</h1>
       <Button onClick={handleLogin} variant="primary">
         Login
       </Button>
@@ -1859,4 +1859,4 @@ Implement pre-commit hooks for code quality:
 - Run linting rules
 - Validate commit messages
 
-This architecture ensures maintainable, performant, and scalable frontend code following Next.js and React best practices while integrating seamlessly with the CPM prototype's business requirements.
+This architecture ensures maintainable, performant, and scalable frontend code following Next.js and React best practices while integrating seamlessly with the prototype's business requirements.

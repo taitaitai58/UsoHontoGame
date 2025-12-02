@@ -7,6 +7,7 @@
 'use client';
 
 import type { FC } from 'react';
+import { useLanguage } from '@/hooks/useLanguage';
 
 export interface Episode {
   id: string;
@@ -26,8 +27,10 @@ export const EpisodeSelector: FC<EpisodeSelectorProps> = ({
   onSelect,
   disabled = false,
 }) => {
+  const { t } = useLanguage();
+
   if (episodes.length === 0) {
-    return <div className="text-center py-4 text-gray-500">エピソードがありません</div>;
+    return <div className="text-center py-4 text-gray-500">{t('episode.noEpisodes')}</div>;
   }
 
   return (

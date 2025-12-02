@@ -13,6 +13,7 @@ Auto-generated from all feature plans. Last updated: 2025-11-11
 - SQLite via Prisma (file: `prisma/dev.db`) (001-lie-detection-answers)
 - TypeScript 5 (strict mode) + Next.js 16.0.1, React 19.2.0 + Next.js 16.0.1, React 19.2.0, Prisma 6.19.0, Zod 4.1.12, Tailwind CSS v4, nanoid 5.1.6 (006-results-dashboard)
 - TypeScript 5 (strict mode), Node.js 20 + Next.js 16.0.1 (App Router), React 19.2.0, Prisma 6.19.0, Zod 4.1.12, Tailwind CSS v4 (007-game-closure)
+- localStorage (client-side persistence for language preference) (008-i18n-support)
 
 **Language & Framework**:
 - TypeScript 5 with strict mode enabled
@@ -187,6 +188,52 @@ npm run check              # Lint and format with Biome
 - Zod schemas for runtime validation at API boundaries
 - Repository pattern for data access
 
+## Internationalization (i18n)
+
+**System**: Custom React Context-based i18n (Feature: 008-i18n-support)
+
+**Supported Languages**:
+- Japanese (ja) - Default language and fallback
+- English (en)
+
+**Usage Pattern**:
+```typescript
+'use client'; // Required for using useLanguage hook
+
+import { useLanguage } from '@/hooks/useLanguage';
+
+function MyComponent() {
+  const { t, language, toggleLanguage, formatDate, formatNumber } = useLanguage();
+
+  return (
+    <div>
+      <h1>{t('game.title')}</h1>
+      <p>{t('session.welcome')}, {username}!</p>
+      <p>{formatDate(new Date(), { dateStyle: 'medium' })}</p>
+      <p>{formatNumber(1234.56)}</p>
+    </div>
+  );
+}
+```
+
+**Translation Keys**:
+- Type-safe with dot notation: `'common.save'`, `'game.status.preparing'`
+- Organized by namespace: common, navigation, game, session, answer, results, error, message, emptyState
+- Defined in `src/lib/i18n/translations/`
+
+**Key Features**:
+- localStorage persistence (auto-saved on language change)
+- SSR-safe hydration (useEffect for client-side initialization)
+- Fallback to Japanese if English translation missing
+- Intl API for date/number formatting
+- Language switcher in app header
+
+**Implementation Notes**:
+- All page components using i18n must be Client Components (`'use client'`)
+- LanguageProvider wraps the app at root layout level
+- Translation keys must exist in both ja.ts and en.ts
+- New translation keys should be added to both language files simultaneously
+
 ## Component Separation Pattern
 
 **App Router Pages** (`src/app/`)：
@@ -295,8 +342,8 @@ npm run check              # Lint and format with Biome
    - React Query integration for state management
 
 ## Recent Changes
+- 008-i18n-support: Added TypeScript 5 (strict mode) + Next.js 16.0.1, React 19.2.0, Tailwind CSS v4
 - 007-game-closure: Added TypeScript 5 (strict mode), Node.js 20 + Next.js 16.0.1 (App Router), React 19.2.0, Prisma 6.19.0, Zod 4.1.12, Tailwind CSS v4
-- 006-results-dashboard: Added TypeScript 5 (strict mode) + Next.js 16.0.1, React 19.2.0 + Next.js 16.0.1, React 19.2.0, Prisma 6.19.0, Zod 4.1.12, Tailwind CSS v4, nanoid 5.1.6
 - 006-results-dashboard: Added TypeScript 5 (strict mode) + Next.js 16.0.1, React 19.2.0 + Next.js 16.0.1, React 19.2.0, Prisma 6.19.0, Zod 4.1.12, Tailwind CSS v4, nanoid 5.1.6
   - Created ActiveGameCard, ActiveGamesList, EmptyState components
   - GetActiveGames use case with status filtering

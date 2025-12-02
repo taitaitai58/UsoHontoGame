@@ -4,6 +4,7 @@
 
 'use client';
 
+import { useLanguage } from '@/hooks/useLanguage';
 import type { ParticipantRankingDto } from '@/server/application/dto/RankingDto';
 
 export interface RankingDisplayProps {
@@ -12,10 +13,12 @@ export interface RankingDisplayProps {
 }
 
 export default function RankingDisplay({ rankings, onShowDetails }: RankingDisplayProps) {
+  const { t } = useLanguage();
+
   if (rankings.length === 0) {
     return (
       <div className="rounded-lg border border-gray-200 bg-white p-8 text-center">
-        <p className="text-gray-600">まだ回答がありません</p>
+        <p className="text-gray-600">{t('results.noAnswers')}</p>
       </div>
     );
   }
@@ -62,7 +65,7 @@ export default function RankingDisplay({ rankings, onShowDetails }: RankingDispl
                     {entry.nickname}
                   </h3>
                   <p className="text-sm text-gray-600">
-                    正解数: {correctCount} / {totalCount}
+                    {t('results.correctCount')}: {correctCount} / {totalCount}
                   </p>
                 </div>
               </div>
@@ -74,7 +77,7 @@ export default function RankingDisplay({ rankings, onShowDetails }: RankingDispl
                 >
                   {entry.totalScore}
                 </p>
-                <p className="text-sm text-gray-600">点</p>
+                <p className="text-sm text-gray-600">{t('results.points')}</p>
               </div>
             </div>
 
@@ -85,7 +88,7 @@ export default function RankingDisplay({ rankings, onShowDetails }: RankingDispl
                 onClick={() => onShowDetails(entry.nickname)}
                 className="mt-3 w-full rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
-                回答詳細を表示
+                {t('results.showDetails')}
               </button>
             )}
           </div>

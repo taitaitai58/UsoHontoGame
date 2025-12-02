@@ -8,6 +8,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
+import { useLanguage } from '@/hooks/useLanguage';
 import type { PresenterWithLieDto } from '@/server/application/dto/PresenterWithLieDto';
 import { type Presenter, useAnswerSubmission } from './useAnswerSubmission';
 
@@ -53,6 +54,7 @@ function transformPresenter(dto: PresenterWithLieDto): Presenter {
 export function useAnswerSubmissionPage({
   gameId,
 }: UseAnswerSubmissionPageOptions): UseAnswerSubmissionPageReturn {
+  const { t } = useLanguage();
   const router = useRouter();
   const [presenters, setPresenters] = useState<Presenter[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -83,11 +85,11 @@ export function useAnswerSubmissionPage({
           setPresenters(transformed);
         } else {
           const error = await response.json();
-          setFetchError(error.details || error.error || 'プレゼンターの取得に失敗しました');
+          setFetchError(error.details || error.error || t('errors.unexpectedError'));
         }
       } catch (_err) {
         if (!isMounted) return;
-        setFetchError('プレゼンターの取得に失敗しました');
+        setFetchError(t('errors.unexpectedError'));
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -100,7 +102,7 @@ export function useAnswerSubmissionPage({
     return () => {
       isMounted = false;
     };
-  }, [gameId]);
+  }, [gameId, t]);
 
   // Handle successful submission - redirect to top page
   const handleSuccess = useCallback(() => {

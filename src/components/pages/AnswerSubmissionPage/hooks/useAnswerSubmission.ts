@@ -7,6 +7,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useLanguage } from '@/hooks/useLanguage';
 import { submitAnswerAction } from '@/app/actions/answers';
 
 export interface Presenter {
@@ -42,6 +43,7 @@ export function useAnswerSubmission({
   onSuccess,
   onError,
 }: UseAnswerSubmissionOptions): UseAnswerSubmissionReturn {
+  const { t } = useLanguage();
   const [selections, setSelections] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -106,18 +108,20 @@ export function useAnswerSubmission({
         onSuccess?.();
       } else {
         const errorMessage =
-          result.errors._form?.[0] || result.errors.selections?.[0] || '回答の送信に失敗しました';
+          result.errors._form?.[0] ||
+          result.errors.selections?.[0] ||
+          t('action.answer.submit.error');
         setError(errorMessage);
         onError?.(errorMessage);
       }
     } catch (_err) {
-      const errorMessage = '予期しないエラーが発生しました';
+      const errorMessage = t('errors.unexpectedError');
       setError(errorMessage);
       onError?.(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
-  }, [gameId, selections, storageKey, onSuccess, onError]);
+  }, [gameId, selections, storageKey, onSuccess, onError, t]);
 
   // Reset selections and messages
   const reset = useCallback(() => {

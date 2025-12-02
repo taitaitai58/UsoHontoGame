@@ -17,7 +17,10 @@
  *     - '締切' (closed): Links to results with text "結果を見る"
  */
 
+'use client';
+
 import Link from 'next/link';
+import { useLanguage } from '@/hooks/useLanguage';
 import type { ActiveGameListItem } from '@/types/game';
 
 export interface ActiveGameCardProps {
@@ -32,11 +35,13 @@ export interface ActiveGameCardProps {
  * Provides navigation to answer submission and dashboard
  */
 export function ActiveGameCard({ game, currentSessionId: _currentSessionId }: ActiveGameCardProps) {
+  const { t } = useLanguage();
+
   const playerCountText = game.playerLimit
     ? `${game.playerCount} / ${game.playerLimit}人`
     : `${game.playerCount}人`;
 
-  const isClosed = game.status === '締切';
+  const isClosed = game.status === t('game.status.closed');
 
   return (
     <article className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition-all duration-200 hover:shadow-md hover:border-gray-300">
@@ -73,16 +78,16 @@ export function ActiveGameCard({ game, currentSessionId: _currentSessionId }: Ac
             type="button"
             disabled
             className="flex-1 rounded-md bg-gray-300 px-4 py-2 text-center text-sm font-medium text-gray-500 cursor-not-allowed"
-            aria-label="このゲームは締め切られました"
+            aria-label={t('game.gameClosed')}
           >
-            回答する
+            {t('answer.submitAnswer')}
           </button>
         ) : (
           <Link
             href={`/games/${game.id}/answer`}
             className="flex-1 rounded-md bg-blue-600 px-4 py-2 text-center text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
-            回答する
+            {t('answer.submitAnswer')}
           </Link>
         )}
 
@@ -91,7 +96,7 @@ export function ActiveGameCard({ game, currentSessionId: _currentSessionId }: Ac
           href={isClosed ? `/games/${game.id}/results` : `/games/${game.id}/dashboard`}
           className="flex-1 rounded-md border border-gray-300 bg-white px-4 py-2 text-center text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
         >
-          {isClosed ? '結果を見る' : 'ダッシュボード'}
+          {isClosed ? t('results.viewResults') : t('navigation.dashboard')}
         </Link>
       </div>
     </article>

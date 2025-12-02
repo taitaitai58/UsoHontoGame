@@ -3,6 +3,7 @@
 // Manages state and business logic for presenter/episode management
 
 import { useCallback, useEffect, useState } from 'react';
+import { useLanguage } from '@/hooks/useLanguage';
 import type { PresenterWithLieDto } from '@/server/application/dto/PresenterWithLieDto';
 import type {
   PresenterManagementPageProps,
@@ -19,6 +20,8 @@ import type {
 export function usePresenterManagementPage({
   gameId,
 }: PresenterManagementPageProps): UsePresenterManagementPageReturn {
+  const { t } = useLanguage();
+
   // State management
   const [presenters, setPresenters] = useState<PresenterWithLieDto[]>([]);
   const [selectedPresenterId, setSelectedPresenterId] = useState<string | null>(null);
@@ -43,7 +46,7 @@ export function usePresenterManagementPage({
 
       if (!response.ok) {
         const error = await response.json();
-        setError(error.details || error.error || 'プレゼンターの読み込みに失敗しました');
+        setError(error.details || error.error || t('errors.unexpectedError'));
         return;
       }
 
@@ -51,11 +54,11 @@ export function usePresenterManagementPage({
       setPresenters(result.presenters);
     } catch (err) {
       console.error('Failed to load presenters:', err);
-      setError('プレゼンターの読み込みに失敗しました');
+      setError(t('errors.unexpectedError'));
     } finally {
       setIsLoading(false);
     }
-  }, [gameId]);
+  }, [gameId, t]);
 
   // Load presenters on mount and when gameId changes
   useEffect(() => {

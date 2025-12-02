@@ -7,6 +7,7 @@
 'use client';
 
 import { createContext, useCallback, useContext, useRef } from 'react';
+import { useLanguage } from '@/hooks/useLanguage';
 
 interface AccessibilityContextValue {
   announceToScreenReader: (message: string, priority?: 'polite' | 'assertive') => void;
@@ -22,7 +23,8 @@ const AccessibilityContext = createContext<AccessibilityContextValue | null>(nul
  * Manages screen reader announcements and accessibility features
  */
 export function AccessibilityProvider({ children }: { children: React.ReactNode }) {
-  const politeAnnouncerRef = useRef<HTMLDivElement>(null);
+  const { t } = useLanguage();
+  const politeAnnouncerRef = useRef<HTMLOutputElement>(null);
   const assertiveAnnouncerRef = useRef<HTMLDivElement>(null);
 
   const announceToScreenReader = useCallback(
@@ -44,26 +46,28 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
 
   const announceStatusChange = useCallback(
     (oldStatus: string, newStatus: string) => {
-      const message = `ゲームステータスが「${oldStatus}」から「${newStatus}」に変更されました`;
+      const message = t('accessibility.statusChanged')
+        .replace('{oldStatus}', oldStatus)
+        .replace('{newStatus}', newStatus);
       announceToScreenReader(message, 'polite');
     },
-    [announceToScreenReader]
+    [announceToScreenReader, t]
   );
 
   const announceError = useCallback(
     (error: string) => {
-      const message = `エラーが発生しました: ${error}`;
+      const message = t('accessibility.errorOccurred').replace('{error}', error);
       announceToScreenReader(message, 'assertive');
     },
-    [announceToScreenReader]
+    [announceToScreenReader, t]
   );
 
   const announceSuccess = useCallback(
     (message: string) => {
-      const successMessage = `操作が成功しました: ${message}`;
+      const successMessage = t('accessibility.operationSucceeded').replace('{message}', message);
       announceToScreenReader(successMessage, 'polite');
     },
-    [announceToScreenReader]
+    [announceToScreenReader, t]
   );
 
   const value: AccessibilityContextValue = {
@@ -101,6 +105,7 @@ export function useAccessibility(): AccessibilityContextValue {
  * Hook for conditional announcements based on user preferences
  */
 export function useConditionalAnnouncement() {
+  const { t } = useLanguage();
   const { announceToScreenReader } = useAccessibility();
 
   const announceIfEnabled = useCallback(
@@ -110,12 +115,12 @@ export function useConditionalAnnouncement() {
 
       // Always announce for screen reader users, but be more verbose if reduced motion is preferred
       if (prefersReducedMotion) {
-        announceToScreenReader(`詳細な更新情報: ${message}`, priority);
+        announceToScreenReader(t('accessibility.detailedUpdate').replace('{message}', message), priority);
       } else {
         announceToScreenReader(message, priority);
       }
     },
-    [announceToScreenReader]
+    [announceToScreenReader, t]
   );
 
   return { announceIfEnabled };

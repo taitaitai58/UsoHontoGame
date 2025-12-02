@@ -7,6 +7,7 @@
 'use client';
 
 import { useCallback, useRef, useState } from 'react';
+import { useLanguage } from '@/hooks/useLanguage';
 import { closeGameAction, startGameAction } from '@/app/actions/game';
 import type { GameStatusValue } from '@/server/domain/value-objects/GameStatus';
 
@@ -44,6 +45,7 @@ export function useGameStatus({
   maxRetries = 2,
   retryDelay = 1000,
 }: UseGameStatusOptions): UseGameStatusReturn {
+  const { t } = useLanguage();
   const [currentStatus, setCurrentStatus] = useState<GameStatusValue>(initialStatus);
   const [isLoading, setIsLoading] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
@@ -84,15 +86,17 @@ export function useGameStatus({
           return;
         } else {
           throw new Error(
-            result.errors._form?.[0] ||
-              `ゲームの${operation === 'start' ? '開始' : '締切'}に失敗しました`
+            result.errors?._form?.[0] ||
+              (operation === 'start' ? t('action.game.start.error') : t('action.game.close.error'))
           );
         }
       } catch (error) {
         const errorMessage =
           error instanceof Error
             ? error.message
-            : `ゲームの${operation === 'start' ? '開始' : '締切'}に失敗しました`;
+            : operation === 'start'
+              ? t('action.game.start.error')
+              : t('action.game.close.error');
 
         // Check if we should retry
         if (enableRetry && attempt < maxRetries) {
@@ -106,7 +110,7 @@ export function useGameStatus({
         }
       }
     },
-    [currentStatus, enableRetry, maxRetries, retryDelay, onSuccess, onError]
+    [currentStatus, enableRetry, maxRetries, retryDelay, onSuccess, onError, t]
   );
 
   const startGame = useCallback(async () => {
@@ -133,7 +137,7 @@ export function useGameStatus({
     if (isLoading || !canClose) return;
 
     // Show confirmation dialog
-    const confirmed = window.confirm('本当にゲームを締切しますか？');
+    const confirmed = window.confirm(t('action.game.close.confirm'));
     if (!confirmed) return;
 
     setIsLoading(true);
