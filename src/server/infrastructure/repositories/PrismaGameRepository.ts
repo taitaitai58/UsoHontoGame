@@ -370,6 +370,7 @@ export class PrismaGameRepository implements IGameRepository {
   }> {
     // Fetch games with actual participation count
     // Include both '出題中' and '締切' games for TOP page display
+    // Feature 007: Display both active and closed games
     const games = await this.prisma.game.findMany({
       where: { status: { in: ['出題中', '締切'] } },
       orderBy: { createdAt: 'desc' },

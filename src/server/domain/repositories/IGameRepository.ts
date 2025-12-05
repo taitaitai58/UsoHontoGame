@@ -122,6 +122,7 @@ export interface IGameRepository {
 
   /**
    * Find active games with pagination and player count
+   * Feature: 005-top-active-games
    * Feature: 007-game-closure - Updated to include both '出題中' and '締切' games
    * @param params Pagination parameters
    * @returns Games with metadata including creator ID and status
