@@ -92,6 +92,10 @@ src/
 # Install dependencies
 npm install
 
+# Set up environment variables for Prisma CLI
+# This creates .env with relative path to database
+echo "DATABASE_URL=\"file:./dev.db\"" > .env
+
 # Set up environment variables for Next.js
 # This creates .env.local with absolute path to database
 echo "DATABASE_URL=\"file:$(pwd)/prisma/dev.db\"" > .env.local
@@ -113,6 +117,42 @@ npm run dev
 ```
 
 Visit [http://localhost:3000](http://localhost:3000)
+
+### Understanding the Application
+
+This application has two distinct entry points:
+
+**Player View** (`/`)
+- For participants joining games
+- Shows only active games (status: 出題中)
+- Join games, view presenters, and vote on episodes
+
+**Moderator View** (`/games`)
+- For game creators/moderators
+- Shows only games you created (filtered by your session ID)
+- Create, edit, and manage your games
+
+**Note**: There are no navigation buttons between these views. Access them directly via URL.
+
+#### Session Management
+
+Sessions are managed via browser cookies:
+- `sessionId`: Unique identifier for your session (generated with nanoid)
+- `nickname`: Your display name
+
+On first visit, you'll be prompted to register a nickname, which creates a persistent session.
+
+#### Game Flow
+
+Games have three statuses:
+- **準備中** (Preparing): Initial state, moderator setting up presenters/episodes
+- **出題中** (Active): Game is live, players can join and vote
+- **締切** (Closed): Voting ended, results available
+
+Each game contains:
+- 1-10 presenters per game
+- 3 episodes per presenter
+- Exactly 1 lie among the 3 episodes (hidden from players)
 
 ### Database Management
 
@@ -166,6 +206,33 @@ npx prisma migrate deploy  # Run migrations (production)
 npx prisma studio          # Open database GUI
 npx prisma generate        # Generate Prisma Client
 ```
+
+#### Seed Scripts
+
+Two seed scripts are available for generating test data:
+
+**1. Global Seed (`npm run seed`)**
+```bash
+npm run seed
+```
+- Creates 150 games total (50 per status)
+- Uses a fixed creator ID: `seed-creator-session-id`
+- **Clears ALL existing data** before seeding
+- Useful for: Fresh start, testing across all statuses
+
+**2. User-Specific Seed (`npm run seed:my <session-id>`)**
+```bash
+npm run seed:my wDTbv1VX6IqHNmPgqbCX-
+```
+- Creates ~100 games for specified session ID
+- Deletes only games from that session
+- Preserves other users' games
+- Useful for: Testing `/games` page with many items
+
+**Getting Your Session ID:**
+1. Open DevTools (F12)
+2. Go to Application → Cookies → http://localhost:3000
+3. Copy the value of `sessionId` cookie
 
 ## Project Structure
 
@@ -313,6 +380,54 @@ DATABASE_URL="file:./dev.db"
    - Lint: `npm run check`
    - Test: `npm test && npm run test:e2e`
    - Build: `npm run build`
+
+## Development Tips
+
+### Testing with Multiple Users
+
+To simulate multiple users simultaneously:
+
+1. **Normal Browser**: User A (e.g., session: `abc123`)
+2. **Incognito/Private Mode**: User B (e.g., session: `xyz789`)
+
+Each browser context maintains separate cookies, allowing independent sessions.
+
+**Example Workflow:**
+```bash
+# Terminal 1: Seed games for User A
+npm run seed:my abc123
+
+# Terminal 2: Seed games for User B
+npm run seed:my xyz789
+
+# Browser 1 (normal): Navigate to http://localhost:3000/games
+# Browser 2 (incognito): Navigate to http://localhost:3000/games
+# Each sees only their own games
+```
+
+### Finding Your Session ID
+
+Your session ID is stored in a browser cookie. To retrieve it:
+
+1. Open **DevTools** (F12 or right-click → Inspect)
+2. Navigate to **Application** tab (Chrome/Edge) or **Storage** tab (Firefox)
+3. Expand **Cookies** → `http://localhost:3000`
+4. Find the `sessionId` cookie
+5. Copy its **Value** (e.g., `wDTbv1VX6IqHNmPgqbCX-`)
+
+**Use Cases:**
+- Generate test data for your session: `npm run seed:my <your-session-id>`
+- Debug session-specific issues
+- Verify session persistence across page reloads
+
+### Page Navigation During Development
+
+Since there are no built-in navigation buttons between player and moderator views:
+
+- **Player View**: `http://localhost:3000/`
+- **Moderator View**: `http://localhost:3000/games`
+
+Bookmark both URLs or type them directly in the address bar.
 
 ## Contributing
 
