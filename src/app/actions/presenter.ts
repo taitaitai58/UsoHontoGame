@@ -1,49 +1,30 @@
 'use server';
 
 // Presenter Server Actions
-// Feature: 002-game-preparation
-// Server Actions for managing presenters and episodes
+// Feature: 002-game-preparation, Server Actions リファクタリング - Phase 3
+// Server Actions with Zod validation for presenter/episode management
+// Refactored to use PresenterApplicationService
 
 import { revalidatePath } from 'next/cache';
-import { t } from '@/lib/i18n/server';
 import { translateZodError } from '@/lib/i18n/translateZodError';
 import type { EpisodeWithLieDto } from '@/server/application/dto/EpisodeWithLieDto';
 import type { PresenterWithLieDto } from '@/server/application/dto/PresenterWithLieDto';
-import { AddEpisode } from '@/server/application/use-cases/games/AddEpisode';
-import { AddPresenter } from '@/server/application/use-cases/games/AddPresenter';
-import { AddPresenterWithEpisodes } from '@/server/application/use-cases/games/AddPresenterWithEpisodes';
-import { RemovePresenter } from '@/server/application/use-cases/games/RemovePresenter';
+import { PresenterApplicationService } from '@/server/application/services/PresenterApplicationService';
 import {
   AddEpisodeSchema,
   AddPresenterSchema,
   AddPresenterWithEpisodesSchema,
   RemovePresenterSchema,
 } from '@/server/domain/schemas/gameSchemas';
-import { SessionServiceContainer } from '@/server/infrastructure/di/SessionServiceContainer';
-import { createGameRepository } from '@/server/infrastructure/repositories';
 
-/**
- * Helper function to get session ID with consistent error handling
- */
-async function getSessionIdOrError(): Promise<
-  string | { success: false; errors: Record<string, string[]> }
-> {
-  try {
-    const sessionService = SessionServiceContainer.getSessionService();
-    return await sessionService.requireCurrentSession();
-  } catch {
-    return {
-      success: false,
-      errors: {
-        _form: [await t('action.session.notFound')],
-      },
-    };
-  }
-}
+// PresenterApplicationService インスタンス（モジュールレベルSingleton）
+const presenterService = new PresenterApplicationService();
 
 /**
  * Add Presenter Server Action
  * Adds a new presenter to a game
+ * @param formData Form data with gameId and nickname
+ * @returns Added presenter or validation errors
  */
 export async function addPresenterAction(
   formData: FormData
@@ -51,119 +32,77 @@ export async function addPresenterAction(
   | { success: true; presenter: PresenterWithLieDto }
   | { success: false; errors: Record<string, string[]> }
 > {
-  try {
-    // Parse and validate form data
-    const rawData = {
-      gameId: formData.get('gameId'),
-      nickname: formData.get('nickname'),
-    };
+  // 1. FormDataパース・Zodバリデーション
+  const rawData = {
+    gameId: formData.get('gameId'),
+    nickname: formData.get('nickname'),
+  };
 
-    const validationResult = AddPresenterSchema.safeParse(rawData);
-
-    if (!validationResult.success) {
-      return {
-        success: false,
-        errors: await translateZodError(validationResult.error),
-      };
-    }
-
-    // Get session (for future authorization)
-    const sessionIdResult = await getSessionIdOrError();
-    if (typeof sessionIdResult === 'object' && !sessionIdResult.success) {
-      return sessionIdResult;
-    }
-    const _sessionId = sessionIdResult as string;
-
-    // Execute use case
-    const repository = createGameRepository();
-    const useCase = new AddPresenter(repository);
-
-    const result = await useCase.execute({
-      gameId: validationResult.data.gameId,
-      nickname: validationResult.data.nickname,
-    });
-
-    // Revalidate the presenter management page
-    revalidatePath(`/game/${validationResult.data.gameId}/presenters`);
-
-    return {
-      success: true,
-      presenter: result.presenter,
-    };
-  } catch (error) {
-    console.error('Failed to add presenter:', error);
+  const validationResult = AddPresenterSchema.safeParse(rawData);
+  if (!validationResult.success) {
     return {
       success: false,
-      errors: {
-        _form: [error instanceof Error ? error.message : await t('action.presenter.add.error')],
-      },
+      errors: await translateZodError(validationResult.error),
     };
   }
+
+  // 2. Application Service呼び出し
+  const result = await presenterService.addPresenter({
+    gameId: validationResult.data.gameId,
+    nickname: validationResult.data.nickname,
+  });
+
+  // 3. 成功時のみrevalidatePath
+  if (result.success) {
+    revalidatePath(`/game/${validationResult.data.gameId}/presenters`);
+    return { success: true, presenter: result.data };
+  }
+
+  return result;
 }
 
 /**
  * Remove Presenter Server Action
  * Removes a presenter from a game (cascade deletes episodes)
+ * @param formData Form data with gameId and presenterId
+ * @returns Success status or validation errors
  */
 export async function removePresenterAction(
   formData: FormData
 ): Promise<{ success: true } | { success: false; errors: Record<string, string[]> }> {
-  try {
-    // Parse and validate form data
-    const rawData = {
-      gameId: formData.get('gameId'),
-      presenterId: formData.get('presenterId'),
-    };
+  // 1. FormDataパース・Zodバリデーション
+  const rawData = {
+    gameId: formData.get('gameId'),
+    presenterId: formData.get('presenterId'),
+  };
 
-    const validationResult = RemovePresenterSchema.safeParse(rawData);
-
-    if (!validationResult.success) {
-      return {
-        success: false,
-        errors: await translateZodError(validationResult.error),
-      };
-    }
-
-    // Get session (for future authorization)
-    const sessionIdResult = await getSessionIdOrError();
-    if (typeof sessionIdResult === 'object' && !sessionIdResult.success) {
-      return {
-        success: false,
-        errors: {
-          _form: [await t('action.session.notFound')],
-        },
-      };
-    }
-    const _sessionId = sessionIdResult as string;
-
-    // Execute use case
-    const repository = createGameRepository();
-    const useCase = new RemovePresenter(repository);
-
-    await useCase.execute({
-      presenterId: validationResult.data.presenterId,
-    });
-
-    // Revalidate the presenter management page
-    revalidatePath(`/game/${validationResult.data.gameId}/presenters`);
-
-    return {
-      success: true,
-    };
-  } catch (error) {
-    console.error('Failed to remove presenter:', error);
+  const validationResult = RemovePresenterSchema.safeParse(rawData);
+  if (!validationResult.success) {
     return {
       success: false,
-      errors: {
-        _form: [error instanceof Error ? error.message : await t('action.presenter.delete.error')],
-      },
+      errors: await translateZodError(validationResult.error),
     };
   }
+
+  // 2. Application Service呼び出し
+  const result = await presenterService.removePresenter({
+    gameId: validationResult.data.gameId,
+    presenterId: validationResult.data.presenterId,
+  });
+
+  // 3. 成功時のみrevalidatePath
+  if (result.success) {
+    revalidatePath(`/game/${validationResult.data.gameId}/presenters`);
+  }
+
+  return result;
 }
 
 /**
  * Add Episode Server Action
  * Adds a new episode to a presenter
+ * @param formData Form data with presenterId, text, and isLie
+ * @returns Added episode or validation errors
  *
  * @deprecated This action is deprecated as of feature 003-presenter-episode-inline.
  * Use addPresenterWithEpisodesAction instead, which allows registering a presenter
@@ -176,73 +115,44 @@ export async function addEpisodeAction(
   | { success: true; episode: EpisodeWithLieDto }
   | { success: false; errors: Record<string, string[]> }
 > {
-  try {
-    // Parse and validate form data
-    const rawData = {
-      presenterId: formData.get('presenterId'),
-      text: formData.get('text'),
-      isLie: formData.get('isLie') === 'true',
-    };
+  // 1. FormDataパース・Zodバリデーション
+  const rawData = {
+    presenterId: formData.get('presenterId'),
+    text: formData.get('text'),
+    isLie: formData.get('isLie') === 'true',
+  };
 
-    const validationResult = AddEpisodeSchema.safeParse(rawData);
-
-    if (!validationResult.success) {
-      return {
-        success: false,
-        errors: await translateZodError(validationResult.error),
-      };
-    }
-
-    // Get session (for future authorization)
-    const sessionIdResult = await getSessionIdOrError();
-    if (typeof sessionIdResult === 'object' && !sessionIdResult.success) {
-      return {
-        success: false,
-        errors: {
-          _form: [await t('action.session.notFound')],
-        },
-      };
-    }
-    const _sessionId = sessionIdResult as string;
-
-    // Execute use case
-    const repository = createGameRepository();
-
-    // Get presenter to find gameId for revalidation
-    const presenter = await repository.findPresenterById(validationResult.data.presenterId);
-
-    const useCase = new AddEpisode(repository);
-
-    const result = await useCase.execute({
-      presenterId: validationResult.data.presenterId,
-      text: validationResult.data.text,
-      isLie: validationResult.data.isLie,
-    });
-
-    // Revalidate the presenter management page if we found the presenter
-    if (presenter) {
-      revalidatePath(`/game/${presenter.gameId}/presenters`);
-    }
-
-    return {
-      success: true,
-      episode: result.episode,
-    };
-  } catch (error) {
-    console.error('Failed to add episode:', error);
+  const validationResult = AddEpisodeSchema.safeParse(rawData);
+  if (!validationResult.success) {
     return {
       success: false,
-      errors: {
-        _form: [error instanceof Error ? error.message : await t('action.episode.add.error')],
-      },
+      errors: await translateZodError(validationResult.error),
     };
   }
+
+  // 2. Application Service呼び出し
+  const result = await presenterService.addEpisode({
+    presenterId: validationResult.data.presenterId,
+    text: validationResult.data.text,
+    isLie: validationResult.data.isLie,
+  });
+
+  // 3. 成功時のみrevalidatePath（gameIdは不明なので省略）
+  // Note: このアクションはdeprecatedのため、revalidatePathは省略
+
+  if (result.success) {
+    return { success: true, episode: result.data };
+  }
+
+  return result;
 }
 
 /**
  * Add Presenter With Episodes Server Action (Feature: 003-presenter-episode-inline)
  * Adds a new presenter to a game with 3 episodes in a single atomic operation
  * This replaces the 2-step process of adding presenter then episodes separately
+ * @param formData Form data with gameId, nickname, and 3 episodes
+ * @returns Added presenter with episodes or validation errors
  */
 export async function addPresenterWithEpisodesAction(
   formData: FormData
@@ -250,69 +160,44 @@ export async function addPresenterWithEpisodesAction(
   | { success: true; presenter: PresenterWithLieDto }
   | { success: false; errors: Record<string, string[]> }
 > {
-  try {
-    // Parse and validate form data
-    const episodesRaw = [];
-    for (let i = 0; i < 3; i += 1) {
-      const text = formData.get(`episodes[${i}].text`) || formData.get(`episode${i}Text`);
-      const isLieStr = formData.get(`episodes[${i}].isLie`) || formData.get(`episode${i}IsLie`);
-      episodesRaw.push({
-        text: text || '', // Convert null to empty string for validation
-        isLie: isLieStr === 'true',
-      });
-    }
-
-    const rawData = {
-      gameId: formData.get('gameId'),
-      nickname: formData.get('nickname') || '', // Convert null to empty string for validation
-      episodes: episodesRaw,
-    };
-
-    const validationResult = AddPresenterWithEpisodesSchema.safeParse(rawData);
-
-    if (!validationResult.success) {
-      return {
-        success: false,
-        errors: await translateZodError(validationResult.error),
-      };
-    }
-
-    // Get session (for future authorization)
-    const sessionIdResult = await getSessionIdOrError();
-    if (typeof sessionIdResult === 'object' && !sessionIdResult.success) {
-      return {
-        success: false,
-        errors: {
-          _form: [await t('action.session.notFound')],
-        },
-      };
-    }
-    const _sessionId = sessionIdResult as string;
-
-    // Execute use case
-    const repository = createGameRepository();
-    const useCase = new AddPresenterWithEpisodes(repository);
-
-    const result = await useCase.execute({
-      gameId: validationResult.data.gameId,
-      nickname: validationResult.data.nickname,
-      episodes: validationResult.data.episodes,
+  // 1. FormDataパース
+  const episodesRaw = [];
+  for (let i = 0; i < 3; i += 1) {
+    const text = formData.get(`episodes[${i}].text`) || formData.get(`episode${i}Text`);
+    const isLieStr = formData.get(`episodes[${i}].isLie`) || formData.get(`episode${i}IsLie`);
+    episodesRaw.push({
+      text: text || '', // Convert null to empty string for validation
+      isLie: isLieStr === 'true',
     });
+  }
 
-    // Revalidate the presenter management page
-    revalidatePath(`/game/${validationResult.data.gameId}/presenters`);
+  const rawData = {
+    gameId: formData.get('gameId'),
+    nickname: formData.get('nickname') || '', // Convert null to empty string for validation
+    episodes: episodesRaw,
+  };
 
-    return {
-      success: true,
-      presenter: result.presenter,
-    };
-  } catch (error) {
-    console.error('Failed to add presenter with episodes:', error);
+  // 2. Zodバリデーション
+  const validationResult = AddPresenterWithEpisodesSchema.safeParse(rawData);
+  if (!validationResult.success) {
     return {
       success: false,
-      errors: {
-        _form: [error instanceof Error ? error.message : await t('action.presenter.add.error')],
-      },
+      errors: await translateZodError(validationResult.error),
     };
   }
+
+  // 3. Application Service呼び出し
+  const result = await presenterService.addPresenterWithEpisodes({
+    gameId: validationResult.data.gameId,
+    nickname: validationResult.data.nickname,
+    episodes: validationResult.data.episodes,
+  });
+
+  // 4. 成功時のみrevalidatePath
+  if (result.success) {
+    revalidatePath(`/game/${validationResult.data.gameId}/presenters`);
+    return { success: true, presenter: result.data };
+  }
+
+  return result;
 }
