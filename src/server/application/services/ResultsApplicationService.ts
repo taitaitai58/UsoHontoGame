@@ -1,4 +1,4 @@
-O// ResultsApplicationService
+// ResultsApplicationService
 // Feature: 006-results-dashboard
 // 結果・ランキング取得の Application Service（読み取り系）
 
