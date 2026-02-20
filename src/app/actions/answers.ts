@@ -8,7 +8,6 @@
 import { t } from '@/lib/i18n/server';
 import type { GetGameForAnswersResponse } from '@/server/application/use-cases/answers/GetGameForAnswers';
 import { ServiceContainer } from '@/server/infrastructure/di/ServiceContainer';
-import { SubmitAnswerSchema } from '@/server/domain/schemas/answerSchemas';
 
 /**
  * Server Action: Get game data for answer submission page
@@ -22,6 +21,7 @@ export async function getGameForAnswersAction(gameId: string): Promise<GetGameFo
 
 /**
  * Server Action: Submit answer
+ * Parses FormData and delegates to AnswerApplicationService (validation included)
  * @param formData Form data containing gameId and selections
  * @returns Success response with answerId or validation errors
  */
@@ -31,7 +31,7 @@ export async function submitAnswerAction(
   | { success: true; data: { answerId: string; message: string } }
   | { success: false; errors: Record<string, string[]> }
 > {
-  // 1. FormDataパース
+  // 1. FormDataパース（型変換のみ）
   const gameId = formData.get('gameId') as string;
   const selectionsRaw = formData.get('selections') as string;
 
@@ -47,31 +47,10 @@ export async function submitAnswerAction(
     };
   }
 
-  // 2. Zodバリデーション
-  const validation = SubmitAnswerSchema.safeParse({
+  // 2. Application Service呼び出し（バリデーション含む）
+  const result = await ServiceContainer.getAnswerService().submitAnswer({
     gameId,
     selections,
-  });
-
-  if (!validation.success) {
-    const errors: Record<string, string[]> = {};
-    for (const issue of validation.error.issues) {
-      const path = issue.path.join('.');
-      if (!errors[path]) {
-        errors[path] = [];
-      }
-      errors[path]?.push(issue.message);
-    }
-    return {
-      success: false,
-      errors,
-    };
-  }
-
-  // 3. Application Service呼び出し
-  const result = await ServiceContainer.getAnswerService().submitAnswer({
-    gameId: validation.data.gameId,
-    selections: validation.data.selections,
   });
 
   return result;
