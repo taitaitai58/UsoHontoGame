@@ -5,6 +5,7 @@
 import { translateZodError } from '@/lib/i18n/translateZodError';
 import { SessionServiceContainer } from '@/server/infrastructure/di/SessionServiceContainer';
 import { createGameRepository } from '@/server/infrastructure/repositories';
+import type { IGameRepository } from '@/server/domain/repositories/IGameRepository';
 import { CreateGame } from '@/server/application/use-cases/games/CreateGame';
 import { UpdateGameSettings } from '@/server/application/use-cases/games/UpdateGameSettings';
 import { DeleteGame } from '@/server/application/use-cases/games/DeleteGame';
@@ -34,6 +35,10 @@ import { mapDomainErrorToServiceError } from './errorHandlers';
  * セッション取得、リポジトリ注入、UseCase実行、エラー変換を担当
  */
 export class GameApplicationService {
+  constructor(
+    private readonly gameRepository: IGameRepository = createGameRepository()
+  ) {}
+
   /**
    * ゲーム作成（バリデーション含む）
    * @param input 未検証のゲーム作成パラメータ
@@ -54,9 +59,8 @@ export class GameApplicationService {
       const sessionService = SessionServiceContainer.getSessionService();
       const sessionId = await sessionService.requireCurrentSession();
 
-      // 3. リポジトリ・UseCase準備
-      const repository = createGameRepository();
-      const useCase = new CreateGame(repository);
+      // 3. UseCase準備
+      const useCase = new CreateGame(this.gameRepository);
 
       // 4. UseCase実行
       const game = await useCase.execute({
@@ -94,9 +98,8 @@ export class GameApplicationService {
       const sessionService = SessionServiceContainer.getSessionService();
       const sessionId = await sessionService.requireCurrentSession();
 
-      // 3. リポジトリ・UseCase準備
-      const repository = createGameRepository();
-      const useCase = new UpdateGameSettings(repository);
+      // 3. UseCase準備
+      const useCase = new UpdateGameSettings(this.gameRepository);
 
       // 4. UseCase実行
       const result = await useCase.execute({
@@ -142,9 +145,8 @@ export class GameApplicationService {
       const sessionService = SessionServiceContainer.getSessionService();
       const sessionId = await sessionService.requireCurrentSession();
 
-      // 3. リポジトリ・UseCase準備
-      const repository = createGameRepository();
-      const useCase = new DeleteGame(repository);
+      // 3. UseCase準備
+      const useCase = new DeleteGame(this.gameRepository);
 
       // 4. UseCase実行
       await useCase.execute({
@@ -168,9 +170,8 @@ export class GameApplicationService {
       const sessionService = SessionServiceContainer.getSessionService();
       const sessionId = await sessionService.requireCurrentSession();
 
-      // 2. リポジトリ・UseCase準備
-      const repository = createGameRepository();
-      const useCase = new GetGamesByCreator(repository);
+      // 2. UseCase準備
+      const useCase = new GetGamesByCreator(this.gameRepository);
 
       // 3. UseCase実行
       const result = await useCase.execute({
@@ -198,8 +199,7 @@ export class GameApplicationService {
       const sessionId = await sessionService.requireCurrentSession();
 
       // 2. リポジトリから直接取得（認可チェック込み）
-      const repository = createGameRepository();
-      const game = await repository.findById(new GameId(gameId));
+      const game = await this.gameRepository.findById(new GameId(gameId));
 
       if (!game) {
         return {
@@ -258,11 +258,8 @@ export class GameApplicationService {
       const sessionService = SessionServiceContainer.getSessionService();
       const sessionId = await sessionService.requireCurrentSession();
 
-      // 3. リポジトリ・UseCase準備
-      const repository = createGameRepository();
-
-      // 4. ステータス遷移検証
-      const validateUseCase = new ValidateStatusTransition(repository);
+      // 3. ステータス遷移検証
+      const validateUseCase = new ValidateStatusTransition(this.gameRepository);
       const validationResponse = await validateUseCase.execute(
         validationResult.data.gameId,
         '出題中',
@@ -278,8 +275,8 @@ export class GameApplicationService {
         };
       }
 
-      // 5. ゲーム開始実行
-      const startUseCase = new StartAcceptingResponses(repository);
+      // 4. ゲーム開始実行
+      const startUseCase = new StartAcceptingResponses(this.gameRepository);
       await startUseCase.execute({ gameId: validationResult.data.gameId });
 
       return { success: true };
@@ -308,11 +305,8 @@ export class GameApplicationService {
       const sessionService = SessionServiceContainer.getSessionService();
       const sessionId = await sessionService.requireCurrentSession();
 
-      // 3. リポジトリ・UseCase準備
-      const repository = createGameRepository();
-
-      // 4. ステータス遷移検証
-      const validateUseCase = new ValidateStatusTransition(repository);
+      // 3. ステータス遷移検証
+      const validateUseCase = new ValidateStatusTransition(this.gameRepository);
       const validationResponse = await validateUseCase.execute(
         validationResult.data.gameId,
         '締切',
@@ -328,8 +322,8 @@ export class GameApplicationService {
         };
       }
 
-      // 5. ゲーム終了実行
-      const closeUseCase = new CloseGame(repository);
+      // 4. ゲーム終了実行
+      const closeUseCase = new CloseGame(this.gameRepository);
       await closeUseCase.execute({ gameId: validationResult.data.gameId, sessionId });
 
       return { success: true };
@@ -358,9 +352,8 @@ export class GameApplicationService {
       const sessionService = SessionServiceContainer.getSessionService();
       await sessionService.requireCurrentSession();
 
-      // 3. リポジトリ・UseCase準備
-      const repository = createGameRepository();
-      const useCase = new StartAcceptingResponses(repository);
+      // 3. UseCase準備
+      const useCase = new StartAcceptingResponses(this.gameRepository);
 
       // 4. UseCase実行
       await useCase.execute({ gameId: validationResult.data.gameId });
@@ -380,8 +373,7 @@ export class GameApplicationService {
     cursor?: string;
     limit?: number;
   } = {}): Promise<GetActiveGamesResult> {
-    const repository = createGameRepository();
-    const useCase = new GetActiveGames(repository);
+    const useCase = new GetActiveGames(this.gameRepository);
     return useCase.execute(params);
   }
 }

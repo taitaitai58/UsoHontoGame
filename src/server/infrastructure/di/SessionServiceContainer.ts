@@ -2,7 +2,9 @@
 // Provides session service instances with singleton pattern
 
 import type { ISessionService } from '@/server/application/services/ISessionService';
+import type { ISessionRepository } from '@/server/domain/repositories/ISessionRepository';
 import { CookieSessionService } from '../services/CookieSessionService';
+import { CookieSessionRepository } from '../repositories/CookieSessionRepository';
 
 /**
  * Session Service Dependency Injection Container
@@ -12,6 +14,7 @@ import { CookieSessionService } from '../services/CookieSessionService';
 // biome-ignore lint/complexity/noStaticOnlyClass: This is a dependency injection container pattern
 export class SessionServiceContainer {
   private static sessionService: ISessionService | null = null;
+  private static sessionRepository: ISessionRepository | null = null;
 
   /**
    * Gets session service instance (singleton)
@@ -26,11 +29,22 @@ export class SessionServiceContainer {
   }
 
   /**
-   * Reset singleton instance (for testing)
+   * Gets session repository instance (singleton)
+   */
+  static getSessionRepository(): ISessionRepository {
+    if (!SessionServiceContainer.sessionRepository) {
+      SessionServiceContainer.sessionRepository = new CookieSessionRepository();
+    }
+    return SessionServiceContainer.sessionRepository;
+  }
+
+  /**
+   * Reset singleton instances (for testing)
    * @internal
    */
   static resetForTesting(): void {
     SessionServiceContainer.sessionService = null;
+    SessionServiceContainer.sessionRepository = null;
   }
 
   /**
@@ -39,5 +53,13 @@ export class SessionServiceContainer {
    */
   static setSessionService(service: ISessionService): void {
     SessionServiceContainer.sessionService = service;
+  }
+
+  /**
+   * Set custom session repository (for testing)
+   * @internal
+   */
+  static setSessionRepository(repo: ISessionRepository): void {
+    SessionServiceContainer.sessionRepository = repo;
   }
 }

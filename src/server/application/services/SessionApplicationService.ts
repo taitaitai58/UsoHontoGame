@@ -4,14 +4,11 @@
 
 import { t } from '@/lib/i18n/server';
 import { SessionServiceContainer } from '@/server/infrastructure/di/SessionServiceContainer';
-import { CookieSessionRepository } from '@/server/infrastructure/repositories/CookieSessionRepository';
 import { CreateSession } from '@/server/application/use-cases/session/CreateSession';
 import { SetNickname } from '@/server/application/use-cases/session/SetNickname';
 import { ValidateSession } from '@/server/application/use-cases/session/ValidateSession';
 import { EmptyNicknameError, NicknameTooLongError } from '@/server/domain/value-objects/Nickname';
-
-// Session repository instance (singleton)
-const sessionRepository = new CookieSessionRepository();
+import type { ISessionRepository } from '@/server/domain/repositories/ISessionRepository';
 
 /**
  * Result types for SessionApplicationService
@@ -37,13 +34,17 @@ export type ValidateSessionResult = {
  * セッションリポジトリ注入、UseCase実行、エラー変換を担当
  */
 export class SessionApplicationService {
+  constructor(
+    private readonly sessionRepository: ISessionRepository = SessionServiceContainer.getSessionRepository()
+  ) {}
+
   /**
    * セッション作成
    * @returns セッションID
    */
   async createSession(): Promise<CreateSessionResult> {
     try {
-      const useCase = new CreateSession(sessionRepository);
+      const useCase = new CreateSession(this.sessionRepository);
       const session = await useCase.execute();
 
       return {
@@ -69,11 +70,11 @@ export class SessionApplicationService {
   async setNickname(nickname: string): Promise<SetNicknameResult> {
     try {
       // セッション作成（既存セッションがあればそれを使用）
-      const createSessionUseCase = new CreateSession(sessionRepository);
+      const createSessionUseCase = new CreateSession(this.sessionRepository);
       const session = await createSessionUseCase.execute();
 
       // ニックネーム設定
-      const useCase = new SetNickname(sessionRepository);
+      const useCase = new SetNickname(this.sessionRepository);
       const result = await useCase.execute(session.sessionId, nickname);
 
       if (!result) {
@@ -141,7 +142,7 @@ export class SessionApplicationService {
       }
 
       // セッション検証
-      const useCase = new ValidateSession(sessionRepository);
+      const useCase = new ValidateSession(this.sessionRepository);
       const session = await useCase.execute(sessionId);
 
       if (!session) {

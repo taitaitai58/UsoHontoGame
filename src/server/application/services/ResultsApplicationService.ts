@@ -4,6 +4,8 @@
 
 import { SessionServiceContainer } from '@/server/infrastructure/di/SessionServiceContainer';
 import { createAnswerRepository, createGameRepository } from '@/server/infrastructure/repositories';
+import type { IGameRepository } from '@/server/domain/repositories/IGameRepository';
+import type { IAnswerRepository } from '@/server/domain/repositories/IAnswerRepository';
 import { GetResults } from '@/server/application/use-cases/results/GetResults';
 import type { RankingDto } from '@/server/application/dto/RankingDto';
 import type { ServiceResponse } from './types';
@@ -15,6 +17,11 @@ import { mapDomainErrorToServiceError } from './errorHandlers';
  * セッション取得、リポジトリ注入、UseCase実行、エラー変換を担当
  */
 export class ResultsApplicationService {
+  constructor(
+    private readonly gameRepository: IGameRepository = createGameRepository(),
+    private readonly answerRepository: IAnswerRepository = createAnswerRepository()
+  ) {}
+
   /**
    * ゲーム結果（ランキング）取得
    * @param gameId ゲームID
@@ -25,9 +32,7 @@ export class ResultsApplicationService {
       const sessionService = SessionServiceContainer.getSessionService();
       await sessionService.requireCurrentSession();
 
-      const gameRepository = createGameRepository();
-      const answerRepository = createAnswerRepository();
-      const useCase = new GetResults(gameRepository, answerRepository);
+      const useCase = new GetResults(this.gameRepository, this.answerRepository);
       const result = await useCase.execute(gameId);
 
       if (!result.success) {

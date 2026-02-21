@@ -4,6 +4,7 @@
 
 import { SessionServiceContainer } from '@/server/infrastructure/di/SessionServiceContainer';
 import { createGameRepository } from '@/server/infrastructure/repositories';
+import type { IGameRepository } from '@/server/domain/repositories/IGameRepository';
 import { AddPresenter } from '@/server/application/use-cases/games/AddPresenter';
 import { AddPresenterWithEpisodes } from '@/server/application/use-cases/games/AddPresenterWithEpisodes';
 import { GetPresenterEpisodes } from '@/server/application/use-cases/games/GetPresenterEpisodes';
@@ -21,6 +22,10 @@ import { mapDomainErrorToServiceError } from './errorHandlers';
  * セッション取得、リポジトリ注入、UseCase実行、エラー変換を担当
  */
 export class PresenterApplicationService {
+  constructor(
+    private readonly gameRepository: IGameRepository = createGameRepository()
+  ) {}
+
   /**
    * 出題者追加
    * @param input 出題者追加パラメータ
@@ -35,9 +40,8 @@ export class PresenterApplicationService {
       const sessionService = SessionServiceContainer.getSessionService();
       await sessionService.requireCurrentSession();
 
-      // 2. リポジトリ・UseCase準備
-      const repository = createGameRepository();
-      const useCase = new AddPresenter(repository);
+      // 2. UseCase準備
+      const useCase = new AddPresenter(this.gameRepository);
 
       // 3. UseCase実行
       const result = await useCase.execute({
@@ -69,9 +73,8 @@ export class PresenterApplicationService {
       const sessionService = SessionServiceContainer.getSessionService();
       await sessionService.requireCurrentSession();
 
-      // 2. リポジトリ・UseCase準備
-      const repository = createGameRepository();
-      const useCase = new AddPresenterWithEpisodes(repository);
+      // 2. UseCase準備
+      const useCase = new AddPresenterWithEpisodes(this.gameRepository);
 
       // 3. UseCase実行
       const result = await useCase.execute({
@@ -103,9 +106,8 @@ export class PresenterApplicationService {
       const sessionService = SessionServiceContainer.getSessionService();
       await sessionService.requireCurrentSession();
 
-      // 2. リポジトリ・UseCase準備
-      const repository = createGameRepository();
-      const useCase = new RemovePresenter(repository);
+      // 2. UseCase準備
+      const useCase = new RemovePresenter(this.gameRepository);
 
       // 3. UseCase実行
       await useCase.execute({
@@ -134,9 +136,8 @@ export class PresenterApplicationService {
       const sessionService = SessionServiceContainer.getSessionService();
       await sessionService.requireCurrentSession();
 
-      // 2. リポジトリ・UseCase準備
-      const repository = createGameRepository();
-      const useCase = new AddEpisode(repository);
+      // 2. UseCase準備
+      const useCase = new AddEpisode(this.gameRepository);
 
       // 3. UseCase実行
       const result = await useCase.execute({
@@ -166,8 +167,7 @@ export class PresenterApplicationService {
       const sessionService = SessionServiceContainer.getSessionService();
       const sessionId = await sessionService.requireCurrentSession();
 
-      const repository = createGameRepository();
-      const useCase = new GetPresentersByGameId(repository);
+      const useCase = new GetPresentersByGameId(this.gameRepository);
       const result = await useCase.execute({ gameId, requesterId: sessionId });
 
       return { success: true, data: { presenters: result.presenters } };
@@ -188,8 +188,7 @@ export class PresenterApplicationService {
       const sessionService = SessionServiceContainer.getSessionService();
       const sessionId = await sessionService.requireCurrentSession();
 
-      const repository = createGameRepository();
-      const useCase = new GetPresenterEpisodes(repository);
+      const useCase = new GetPresenterEpisodes(this.gameRepository);
       const result = await useCase.execute({ presenterId, requesterId: sessionId });
 
       return { success: true, data: { presenter: result.presenter } };

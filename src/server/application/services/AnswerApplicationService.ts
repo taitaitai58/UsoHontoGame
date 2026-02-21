@@ -9,17 +9,17 @@ import {
   createGameRepository,
   createParticipationRepository,
 } from '@/server/infrastructure/repositories';
-import { CookieSessionRepository } from '@/server/infrastructure/repositories/CookieSessionRepository';
 import { GetGameForAnswers } from '@/server/application/use-cases/answers/GetGameForAnswers';
 import { SubmitAnswer } from '@/server/application/use-cases/answers/SubmitAnswer';
 import { ValidateSession } from '@/server/application/use-cases/session/ValidateSession';
 import type { GetGameForAnswersResponse } from '@/server/application/use-cases/answers/GetGameForAnswers';
 import { SubmitAnswerSchema } from '@/server/domain/schemas/answerSchemas';
+import type { IGameRepository } from '@/server/domain/repositories/IGameRepository';
+import type { IAnswerRepository } from '@/server/domain/repositories/IAnswerRepository';
+import type { IParticipationRepository } from '@/server/domain/repositories/IParticipationRepository';
+import type { ISessionRepository } from '@/server/domain/repositories/ISessionRepository';
 import type { ServiceResponse } from './types';
 import { mapDomainErrorToServiceError } from './errorHandlers';
-
-// Session repository instance for session validation
-const sessionRepository = new CookieSessionRepository();
 
 /**
  * AnswerApplicationService
@@ -27,6 +27,13 @@ const sessionRepository = new CookieSessionRepository();
  * セッション取得、リポジトリ注入、UseCase実行、エラー変換を担当
  */
 export class AnswerApplicationService {
+  constructor(
+    private readonly gameRepository: IGameRepository = createGameRepository(),
+    private readonly answerRepository: IAnswerRepository = createAnswerRepository(),
+    private readonly participationRepository: IParticipationRepository = createParticipationRepository(),
+    private readonly sessionRepository: ISessionRepository = SessionServiceContainer.getSessionRepository()
+  ) {}
+
   /**
    * ゲーム情報取得（回答用）
    * @param gameId ゲームID
@@ -34,9 +41,8 @@ export class AnswerApplicationService {
    */
   async getGameForAnswers(gameId: string): Promise<GetGameForAnswersResponse> {
     try {
-      // リポジトリ・UseCase準備
-      const gameRepository = createGameRepository();
-      const useCase = new GetGameForAnswers(gameRepository);
+      // UseCase準備
+      const useCase = new GetGameForAnswers(this.gameRepository);
 
       // UseCase実行
       return await useCase.execute(gameId);
@@ -73,18 +79,14 @@ export class AnswerApplicationService {
       const sessionId = await sessionService.requireCurrentSession();
 
       // 3. ValidateSessionでニックネームも取得
-      const validateUseCase = new ValidateSession(sessionRepository);
+      const validateUseCase = new ValidateSession(this.sessionRepository);
       const session = await validateUseCase.execute(sessionId);
 
       // Use nickname if available, otherwise use default name based on sessionId
       const nickname = session?.nickname ?? `参加者_${sessionId.slice(0, 8)}`;
 
-      // 4. リポジトリ・UseCase準備
-      const gameRepository = createGameRepository();
-      const answerRepository = createAnswerRepository();
-      const participationRepository = createParticipationRepository();
-
-      const useCase = new SubmitAnswer(answerRepository, participationRepository, gameRepository);
+      // 4. UseCase準備
+      const useCase = new SubmitAnswer(this.answerRepository, this.participationRepository, this.gameRepository);
 
       // 5. UseCase実行
       const result = await useCase.execute({
