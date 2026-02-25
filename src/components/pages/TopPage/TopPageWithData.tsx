@@ -9,8 +9,9 @@
 
 'use client';
 
-import { useLanguage } from '@/hooks/useLanguage';
+import { useState } from 'react';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { useLanguage } from '@/hooks/useLanguage';
 import { useActiveGames } from './hooks/useActiveGames';
 import { TopPage } from './index';
 
@@ -26,8 +27,9 @@ export interface TopPageWithDataProps {
  * Displays loading state on initial load, then uses background refresh
  */
 export function TopPageWithData({ nickname, currentSessionId }: TopPageWithDataProps) {
+  const [showOnlyFavorite, setShowOnlyFavorite] = useState(false);
   const { t } = useLanguage();
-  const { games, isLoading, isFetching, error, refetch } = useActiveGames();
+  const { games, isLoading, isFetching, error, refetch } = useActiveGames({ showOnlyFavorite });
 
   // Show loading skeleton only on initial load
   if (isLoading) {
@@ -121,7 +123,13 @@ export function TopPageWithData({ nickname, currentSessionId }: TopPageWithDataP
   return (
     <>
       {loadingIndicator}
-      <TopPage nickname={nickname} games={games} currentSessionId={currentSessionId} />
+      <TopPage
+        nickname={nickname}
+        games={games}
+        currentSessionId={currentSessionId}
+        showOnlyFavorite={showOnlyFavorite}
+        setShowOnlyFavorite={setShowOnlyFavorite}
+      />
     </>
   );
 }

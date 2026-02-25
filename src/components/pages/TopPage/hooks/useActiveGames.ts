@@ -6,16 +6,20 @@
  * Uses React Query for caching, background refetching, and optimistic updates
  */
 
-'use client';
+"use client";
 
-import { useQuery } from '@tanstack/react-query';
-import type { ActiveGameListItem } from '@/types/game';
+import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
+import type { ActiveGameListItem } from "@/types/game";
+import { getFavoriteGames } from "@/utils/getFavorteGames";
 
 export interface UseActiveGamesOptions {
   /** Refetch interval in milliseconds (default: 30000 / 30 seconds) */
   refetchInterval?: number;
   /** Number of games to fetch per page */
   limit?: number;
+  /** Whether to show only favorite games */
+  showOnlyFavorite?: boolean;
 }
 
 export interface UseActiveGamesResult {
@@ -53,8 +57,14 @@ export interface UseActiveGamesResult {
  * }
  * ```
  */
-export function useActiveGames(options: UseActiveGamesOptions = {}): UseActiveGamesResult {
-  const { refetchInterval = 30000, limit = 20 } = options;
+export function useActiveGames(
+  options: UseActiveGamesOptions = {},
+): UseActiveGamesResult {
+  const {
+    refetchInterval = 30000,
+    limit = 20,
+    showOnlyFavorite = false,
+  } = options;
 
   const {
     data,
@@ -63,21 +73,23 @@ export function useActiveGames(options: UseActiveGamesOptions = {}): UseActiveGa
     error,
     refetch: queryRefetch,
   } = useQuery({
-    queryKey: ['activeGames', { limit }],
+    queryKey: ["activeGames", { limit }],
     queryFn: async () => {
       // Fetch from API endpoint instead of server action
       const params = new URLSearchParams();
-      if (limit) params.append('limit', limit.toString());
+      if (limit) params.append("limit", limit.toString());
 
       const response = await fetch(`/api/games/active?${params.toString()}`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.details || error.error || 'Failed to fetch active games');
+        throw new Error(
+          error.details || error.error || "Failed to fetch active games",
+        );
       }
 
       const result = await response.json();
@@ -101,8 +113,17 @@ export function useActiveGames(options: UseActiveGamesOptions = {}): UseActiveGa
     await queryRefetch();
   };
 
+  const games = useMemo(() => {
+    if (showOnlyFavorite) {
+      return data?.games.filter((game: ActiveGameListItem) =>
+        getFavoriteGames().includes(game.id),
+      );
+    }
+    return data?.games;
+  }, [data?.games, showOnlyFavorite]);
+
   return {
-    games: data?.games ?? [],
+    games: games ?? [],
     isLoading,
     isFetching,
     error: error as Error | null,

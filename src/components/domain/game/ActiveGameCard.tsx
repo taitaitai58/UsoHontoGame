@@ -20,6 +20,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useCallback, useState } from 'react';
 import { useLanguage } from '@/hooks/useLanguage';
 import type { ActiveGameListItem } from '@/types/game';
 
@@ -35,7 +36,23 @@ export interface ActiveGameCardProps {
  * Provides navigation to answer submission and dashboard
  */
 export function ActiveGameCard({ game, currentSessionId: _currentSessionId }: ActiveGameCardProps) {
+  const favorite = JSON.parse(localStorage.getItem(`favorites`) ?? '[]');
+  const [isFavorite, setIsFavorite] = useState(favorite.includes(game.id));
   const { t } = useLanguage();
+
+  const handleFavorite = useCallback(() => {
+    setIsFavorite((prev: boolean) => {
+      const next = !prev;
+      const current = JSON.parse(localStorage.getItem(`favorites`) ?? '[]');
+      const updated = next
+        ? current.includes(game.id)
+          ? current
+          : [...current, game.id]
+        : current.filter((id: string) => id !== game.id);
+      localStorage.setItem(`favorites`, JSON.stringify(updated));
+      return next;
+    });
+  }, [game.id]);
 
   const playerCountText = game.playerLimit
     ? `${game.playerCount} / ${game.playerLimit}人`
@@ -49,6 +66,9 @@ export function ActiveGameCard({ game, currentSessionId: _currentSessionId }: Ac
       {/* Game Title and Status Badge */}
       <div className="flex items-start justify-between gap-3 mb-4">
         <h3 className="text-xl font-semibold text-gray-900">{game.title}</h3>
+        <button type="button" onClick={handleFavorite}>
+          {isFavorite ? '❤️' : '🖤'}
+        </button>
         <span
           className={`flex-shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${
             isClosed ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'

@@ -6,6 +6,7 @@
 
 import { ActiveGamesList } from '@/components/domain/game/ActiveGamesList';
 import { NicknameInput } from '@/components/domain/session/NicknameInput';
+import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Header } from '@/components/ui/Header';
 import { useLanguage } from '@/hooks/useLanguage';
@@ -41,7 +42,13 @@ export function TopPageNicknameSetup() {
  *
  * @param props - Component props including nickname, games, and currentSessionId
  */
-export function TopPage({ nickname, games, currentSessionId }: TopPageProps) {
+export function TopPage({
+  nickname,
+  games,
+  currentSessionId,
+  showOnlyFavorite,
+  setShowOnlyFavorite,
+}: TopPageProps) {
   const { t } = useLanguage();
   const hasGames = games && games.length > 0;
 
@@ -54,6 +61,9 @@ export function TopPage({ nickname, games, currentSessionId }: TopPageProps) {
             <h1 className="text-3xl font-bold text-gray-900">
               {t('session.welcome')}, {nickname}!
             </h1>
+            <Button onClick={() => setShowOnlyFavorite(!showOnlyFavorite)}>
+              {showOnlyFavorite ? 'Show All Games' : 'Show Only Favorite Games'}
+            </Button>
           </div>
 
           <div className="mb-6">

@@ -1,7 +1,7 @@
 // Type definitions for TopPage
 // Feature: 001-session-top-page, 005-top-active-games
 
-import type { ActiveGameListItem } from '@/types/game';
+import type { ActiveGameListItem } from "@/types/game";
 
 /**
  * Props for TopPageNicknameSetup component
@@ -22,4 +22,8 @@ export interface TopPageProps {
   games: ActiveGameListItem[];
   /** Current user's session ID (for creator authorization) */
   currentSessionId: string;
+  /** Whether to show only favorite games */
+  showOnlyFavorite: boolean;
+  /** Function to set whether to show only favorite games */
+  setShowOnlyFavorite: (showOnlyFavorite: boolean) => void;
 }
