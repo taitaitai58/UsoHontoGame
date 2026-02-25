@@ -9,6 +9,7 @@ import ResponseStatusList from '@/components/domain/results/ResponseStatusList';
 import { AccessibilityProvider } from '@/components/ui/AccessibilityProvider';
 import { Header } from '@/components/ui/Header';
 import { ToastContainer } from '@/components/ui/Toast';
+import { URLCopyButton } from '@/components/ui/URLCopyButton';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useToast } from '@/hooks/useToast';
 import { useResponseStatus } from './hooks/useResponseStatus';
@@ -53,6 +54,7 @@ export function ResponseStatusPage({ gameId, initialData }: ResponseStatusPagePr
                 <h1 className="text-3xl font-bold text-gray-900">
                   {t('results.responseStatusDashboard')}
                 </h1>
+                <URLCopyButton />
                 <p className="mt-2 text-sm text-gray-600">
                   {t('results.responseStatusDescription')}
                 </p>
