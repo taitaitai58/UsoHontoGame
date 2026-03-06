@@ -46,6 +46,8 @@ export interface NavigationTranslations {
   home: string;
   games: string;
   gameList: string;
+  gameManagement: string;
+  participantTop: string;
   createGame: string;
   joinGame: string;
   settings: string;

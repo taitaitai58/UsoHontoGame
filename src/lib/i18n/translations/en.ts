@@ -28,6 +28,8 @@ export const en: Translations = {
     home: 'Home',
     games: 'Games',
     gameList: 'Game List',
+    gameManagement: 'Game Management',
+    participantTop: 'Participant TOP',
     createGame: 'Create Game',
     joinGame: 'Join Game',
     settings: 'Settings',

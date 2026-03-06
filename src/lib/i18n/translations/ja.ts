@@ -28,6 +28,8 @@ export const ja: Translations = {
     home: 'ホーム',
     games: 'ゲーム',
     gameList: 'ゲーム一覧',
+    gameManagement: 'ゲーム管理',
+    participantTop: '参加者TOP',
     createGame: 'ゲーム作成',
     joinGame: 'ゲーム参加ページへ',
     settings: '設定',
