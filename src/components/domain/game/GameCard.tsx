@@ -8,6 +8,7 @@ import { useLanguage } from '@/hooks/useLanguage';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import type { GameDto, GameManagementDto } from '@/server/application/dto/GameDto';
+import { CopyGameUrlButton } from './CopyGameUrlButton';
 
 export interface GameCardProps {
   /** Game data (basic or management view) */
@@ -16,6 +17,8 @@ export interface GameCardProps {
   managementView?: boolean;
   /** Click handler for card navigation */
   onClick?: () => void;
+  /** Called when copy URL succeeds (e.g. show toast); used in management list */
+  onCopyUrlSuccess?: (message: string) => void;
 }
 
 /**
@@ -23,7 +26,12 @@ export interface GameCardProps {
  * Displays game information in a card format
  * Supports both player view and management view
  */
-export function GameCard({ game, managementView = false, onClick }: GameCardProps) {
+export function GameCard({
+  game,
+  managementView = false,
+  onClick,
+  onCopyUrlSuccess,
+}: GameCardProps) {
   const { t } = useLanguage();
 
   const isManagementDto = (g: GameDto | GameManagementDto): g is GameManagementDto => {
@@ -71,6 +79,15 @@ export function GameCard({ game, managementView = false, onClick }: GameCardProp
         {/* Game Info */}
         {managementView && managementGame ? (
           <div className="space-y-2">
+            {onCopyUrlSuccess && (
+              <div
+                className="flex items-center gap-2"
+                onClick={(e) => e.stopPropagation()}
+                onKeyDown={(e) => e.stopPropagation()}
+              >
+                <CopyGameUrlButton gameId={game.id} onCopySuccess={onCopyUrlSuccess} />
+              </div>
+            )}
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-600">{t('game.participants')}:</span>
               <span className="font-medium">

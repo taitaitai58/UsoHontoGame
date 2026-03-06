@@ -4,6 +4,7 @@
 
 'use client';
 
+import { CopyGameUrlButton } from '@/components/domain/game/CopyGameUrlButton';
 import { DeleteGameButton } from '@/components/domain/game/DeleteGameButton';
 import { GameForm } from '@/components/domain/game/GameForm';
 import { GameStatusBadge } from '@/components/domain/game/GameStatusBadge';
@@ -64,7 +65,8 @@ export function GameDetailPage({ game, currentSessionId }: GameDetailPageProps) 
                 <h1 className="text-3xl font-bold text-gray-900">{t('game.gameDetails')}</h1>
                 <p className="mt-2 text-sm text-gray-600">{t('game.gameManagementDescription')}</p>
               </div>
-              <div className="flex flex-col items-end space-y-3">
+              <div className="flex flex-col items-end gap-3">
+                <CopyGameUrlButton gameId={game.id} onCopySuccess={showSuccess} />
                 <GameStatusBadge status={currentStatus} animated={true} />
                 {/* Show start button for 準備中 (to start game) */}
                 {currentStatus === '準備中' && (

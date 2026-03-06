@@ -5,9 +5,15 @@
 
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { ReactElement } from 'react';
 import { describe, expect, it, vi } from 'vitest';
+import { LanguageProvider } from '@/providers/LanguageProvider';
 import type { GameDto, GameManagementDto } from '@/server/application/dto/GameDto';
 import { GameCard } from './GameCard';
+
+function renderWithLanguageProvider(ui: ReactElement) {
+  return render(<LanguageProvider>{ui}</LanguageProvider>);
+}
 
 // Mock Card and Badge components
 vi.mock('@/components/ui/Card', () => ({
@@ -44,26 +50,26 @@ describe('GameCard', () => {
 
   describe('Player View', () => {
     it('should render game name', () => {
-      render(<GameCard game={mockGameDto} />);
+      renderWithLanguageProvider(<GameCard game={mockGameDto} />);
 
       expect(screen.getByText('Test Game')).toBeInTheDocument();
     });
 
     it('should render available slots', () => {
-      render(<GameCard game={mockGameDto} />);
+      renderWithLanguageProvider(<GameCard game={mockGameDto} />);
 
       expect(screen.getByText('5')).toBeInTheDocument();
-      expect(screen.getByText('残り枠:')).toBeInTheDocument();
+      expect(screen.getByText('空き枠:')).toBeInTheDocument();
     });
 
     it('should render join button', () => {
-      render(<GameCard game={mockGameDto} />);
+      renderWithLanguageProvider(<GameCard game={mockGameDto} />);
 
       expect(screen.getByRole('button', { name: '参加する' })).toBeInTheDocument();
     });
 
     it('should not show status badge in player view', () => {
-      render(<GameCard game={mockGameDto} />);
+      renderWithLanguageProvider(<GameCard game={mockGameDto} />);
 
       expect(screen.queryByTestId('badge')).not.toBeInTheDocument();
     });
@@ -71,7 +77,7 @@ describe('GameCard', () => {
 
   describe('Management View', () => {
     it('should render game name and status badge', () => {
-      render(<GameCard game={mockManagementDto} managementView />);
+      renderWithLanguageProvider(<GameCard game={mockManagementDto} managementView />);
 
       expect(screen.getByText('Management Game')).toBeInTheDocument();
       expect(screen.getByTestId('badge')).toBeInTheDocument();
@@ -79,27 +85,27 @@ describe('GameCard', () => {
     });
 
     it('should render current and max players', () => {
-      render(<GameCard game={mockManagementDto} managementView />);
+      renderWithLanguageProvider(<GameCard game={mockManagementDto} managementView />);
 
       expect(screen.getByText('参加者:')).toBeInTheDocument();
       expect(screen.getByText('7/10')).toBeInTheDocument();
     });
 
     it('should render remaining slots', () => {
-      render(<GameCard game={mockManagementDto} managementView />);
+      renderWithLanguageProvider(<GameCard game={mockManagementDto} managementView />);
 
-      expect(screen.getByText('残り枠:')).toBeInTheDocument();
+      expect(screen.getByText('空き枠:')).toBeInTheDocument();
       expect(screen.getByText('3人')).toBeInTheDocument();
     });
 
     it('should not render join button in management view', () => {
-      render(<GameCard game={mockManagementDto} managementView />);
+      renderWithLanguageProvider(<GameCard game={mockManagementDto} managementView />);
 
       expect(screen.queryByRole('button', { name: '参加する' })).not.toBeInTheDocument();
     });
 
     it('should apply success variant for 出題中 status', () => {
-      render(<GameCard game={mockManagementDto} managementView />);
+      renderWithLanguageProvider(<GameCard game={mockManagementDto} managementView />);
 
       const badge = screen.getByTestId('badge');
       expect(badge).toHaveAttribute('data-variant', 'success');
@@ -110,7 +116,7 @@ describe('GameCard', () => {
         ...mockManagementDto,
         status: '準備中',
       };
-      render(<GameCard game={preparingGame} managementView />);
+      renderWithLanguageProvider(<GameCard game={preparingGame} managementView />);
 
       const badge = screen.getByTestId('badge');
       expect(badge).toHaveAttribute('data-variant', 'warning');
@@ -121,7 +127,7 @@ describe('GameCard', () => {
         ...mockManagementDto,
         status: '締切',
       };
-      render(<GameCard game={closedGame} managementView />);
+      renderWithLanguageProvider(<GameCard game={closedGame} managementView />);
 
       const badge = screen.getByTestId('badge');
       expect(badge).toHaveAttribute('data-variant', 'default');
@@ -133,7 +139,7 @@ describe('GameCard', () => {
       const user = userEvent.setup();
       const onClick = vi.fn();
 
-      render(<GameCard game={mockGameDto} onClick={onClick} />);
+      renderWithLanguageProvider(<GameCard game={mockGameDto} onClick={onClick} />);
 
       const card = screen.getByRole('button', { name: /View details for Test Game/i });
       await user.click(card);
@@ -145,7 +151,7 @@ describe('GameCard', () => {
       const user = userEvent.setup();
       const onClick = vi.fn();
 
-      render(<GameCard game={mockGameDto} onClick={onClick} />);
+      renderWithLanguageProvider(<GameCard game={mockGameDto} onClick={onClick} />);
 
       const card = screen.getByRole('button', { name: /View details for Test Game/i });
       card.focus();
@@ -158,7 +164,7 @@ describe('GameCard', () => {
       const user = userEvent.setup();
       const onClick = vi.fn();
 
-      render(<GameCard game={mockGameDto} onClick={onClick} />);
+      renderWithLanguageProvider(<GameCard game={mockGameDto} onClick={onClick} />);
 
       const card = screen.getByRole('button', { name: /View details for Test Game/i });
       card.focus();
@@ -169,14 +175,14 @@ describe('GameCard', () => {
 
     it('should apply hover styles when onClick is provided', () => {
       const onClick = vi.fn();
-      render(<GameCard game={mockGameDto} onClick={onClick} />);
+      renderWithLanguageProvider(<GameCard game={mockGameDto} onClick={onClick} />);
 
       const card = screen.getByTestId('card');
       expect(card).toHaveClass('cursor-pointer', 'hover:shadow-md', 'transition-shadow');
     });
 
     it('should not apply hover styles when onClick is not provided', () => {
-      render(<GameCard game={mockGameDto} />);
+      renderWithLanguageProvider(<GameCard game={mockGameDto} />);
 
       const card = screen.getByTestId('card');
       expect(card).not.toHaveClass('cursor-pointer');
@@ -184,13 +190,13 @@ describe('GameCard', () => {
 
     it('should have role="button" when onClick is provided', () => {
       const onClick = vi.fn();
-      render(<GameCard game={mockGameDto} onClick={onClick} />);
+      renderWithLanguageProvider(<GameCard game={mockGameDto} onClick={onClick} />);
 
       expect(screen.getByRole('button', { name: /View details/i })).toBeInTheDocument();
     });
 
     it('should not have role="button" when onClick is not provided', () => {
-      render(<GameCard game={mockGameDto} />);
+      renderWithLanguageProvider(<GameCard game={mockGameDto} />);
 
       expect(screen.queryByRole('button', { name: /View details/i })).not.toBeInTheDocument();
     });

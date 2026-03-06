@@ -82,6 +82,8 @@ export const en: Translations = {
     gameClosed: 'Game Closed',
     createdGames: 'Created Games',
     availableGames: 'Available Games',
+    copyUrl: 'Copy URL',
+    copyUrlSuccess: 'URL copied to clipboard',
   },
 
   session: {

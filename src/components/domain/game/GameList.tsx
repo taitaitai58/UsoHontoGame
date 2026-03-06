@@ -15,6 +15,8 @@ export interface GameListProps {
   managementView?: boolean;
   /** Handler for when a game card is clicked */
   onGameClick?: (gameId: string) => void;
+  /** Called when copy URL succeeds on a card (e.g. show toast) */
+  onCopyUrlSuccess?: (message: string) => void;
 }
 
 /**
@@ -22,7 +24,12 @@ export interface GameListProps {
  * Displays a list of games with optional empty state
  * Supports both player and management views
  */
-export function GameList({ games, managementView = false, onGameClick }: GameListProps) {
+export function GameList({
+  games,
+  managementView = false,
+  onGameClick,
+  onCopyUrlSuccess,
+}: GameListProps) {
   const { t } = useLanguage();
 
   // Empty state
@@ -92,6 +99,7 @@ export function GameList({ games, managementView = false, onGameClick }: GameLis
             game={game}
             managementView={managementView}
             onClick={onGameClick ? () => onGameClick(game.id) : undefined}
+            onCopyUrlSuccess={managementView ? onCopyUrlSuccess : undefined}
           />
         ))}
       </div>

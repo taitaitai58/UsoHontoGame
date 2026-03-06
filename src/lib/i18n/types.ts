@@ -106,6 +106,8 @@ export interface GameTranslations {
   gameClosed: string;
   createdGames: string;
   availableGames: string;
+  copyUrl: string;
+  copyUrlSuccess: string;
 }
 
 /**

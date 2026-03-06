@@ -82,6 +82,8 @@ export const ja: Translations = {
     gameClosed: 'ゲーム締切',
     createdGames: '作成したゲーム',
     availableGames: '参加可能なゲーム',
+    copyUrl: 'URLをコピー',
+    copyUrlSuccess: 'URLをコピーしました',
   },
 
   session: {

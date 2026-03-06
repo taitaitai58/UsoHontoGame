@@ -5,8 +5,10 @@
 'use client';
 
 import { Header } from '@/components/ui/Header';
+import { ToastContainer } from '@/components/ui/Toast';
 import { GameListClient } from '@/components/domain/game/GameListClient';
 import { useLanguage } from '@/hooks/useLanguage';
+import { useToast } from '@/hooks/useToast';
 import type { GameListPageErrorProps, GameListPageProps } from './GameListPage.types';
 
 /**
@@ -18,6 +20,11 @@ import type { GameListPageErrorProps, GameListPageProps } from './GameListPage.t
  */
 export function GameListPage({ games }: GameListPageProps) {
   const { t } = useLanguage();
+  const { toasts, showSuccess, removeToast } = useToast();
+
+  const handleCopyUrlSuccess = (message: string) => {
+    showSuccess(message);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -52,8 +59,13 @@ export function GameListPage({ games }: GameListPageProps) {
         </div>
 
         {/* Game List */}
-        <GameListClient games={games} managementView={true} />
+        <GameListClient
+          games={games}
+          managementView={true}
+          onCopyUrlSuccess={handleCopyUrlSuccess}
+        />
       </div>
+      <ToastContainer toasts={toasts} onClose={removeToast} />
     </div>
   );
 }
